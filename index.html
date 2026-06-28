@@ -44,6 +44,10 @@ img{display:block;max-width:100%;}
 .lift{transition:transform .45s cubic-bezier(.16,.84,.44,1), box-shadow .45s;}
 .lift:hover{transform:translateY(-5px);box-shadow:0 30px 60px -30px rgba(16,24,40,.34);}
 
+/* ---------- interactive trip days ---------- */
+.trip-day:hover{background:rgba(65,89,156,.09) !important;}
+.trip-day:focus-visible{outline:2px solid #41599C;outline-offset:-2px;border-radius:4px;}
+
 /* ---------- motion ---------- */
 .reveal{opacity:1;transform:none;}
 @media (prefers-reduced-motion: no-preference){
@@ -59,7 +63,7 @@ img{display:block;max-width:100%;}
   .hero-in{grid-template-columns:1fr !important;gap:8px !important;padding:48px 0 30px !important;text-align:center;}
   .hero-in .lede,.hero-in .cta-row,.hero-in .cta-note,.hero-in .eyebrow{margin-left:auto;margin-right:auto;justify-content:center;}
   .device-stage{margin-top:30px;}
-  .hero-photo{display:none !important;}
+  .hero-photo,.hero-chip{display:none !important;}
   h1{font-size:43px !important;}
   .nav-links .lk{display:none;}
   .showcase-grid{grid-template-columns:1fr !important;min-width:0;}
@@ -132,13 +136,18 @@ img{display:block;max-width:100%;}
 
     <!-- device + floating photo -->
     <div class="device-stage" style="position:relative;justify-self:center;width:306px;">
-      <!-- floating real photo for depth -->
-      <div class="hero-photo imgwrap reveal d2" data-parallax="0.045" style="position:absolute;top:-26px;right:-118px;width:208px;height:268px;border-radius:24px;box-shadow:0 34px 60px -28px rgba(20,30,60,.5);border:5px solid #fff;z-index:1;">
-        <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=620&q=80&auto=format&fit=crop" alt="Evening in the streets of Gion, Kyoto" loading="eager">
-        <div style="position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#fff;background:rgba(20,24,34,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5px 10px;border-radius:999px;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
-          Gion, Kyoto
+      <!-- floating real photo for depth (tilted, fully visible) -->
+      <div class="hero-photo reveal d2" data-parallax="0.04" style="position:absolute;top:-32px;right:-56px;z-index:1;">
+        <div class="imgwrap" style="width:184px;height:230px;border-radius:22px;border:6px solid #fff;box-shadow:0 36px 60px -26px rgba(20,30,60,.5);transform:rotate(5deg);">
+          <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=620&q=80&auto=format&fit=crop" alt="Evening in the streets of Gion, Kyoto" loading="eager">
         </div>
+      </div>
+      <!-- floating journal chip, balances the composition -->
+      <div class="hero-chip reveal d4" style="position:absolute;left:-102px;bottom:40px;z-index:3;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 22px 46px -20px rgba(20,30,60,.42);border-radius:16px;padding:9px 14px 9px 9px;">
+        <div class="imgwrap" style="width:42px;height:42px;border-radius:12px;flex:none;">
+          <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=140&q=70&auto=format&fit=crop" alt="Kaiseki dinner journal photo">
+        </div>
+        <div><div style="font-size:12.5px;font-weight:700;color:#15161A;">Kaiseki dinner</div><div style="font-size:11px;color:#8A8D96;">Logged · ★★★★★</div></div>
       </div>
 
       <!-- phone -->
@@ -232,48 +241,8 @@ img{display:block;max-width:100%;}
       <p style="font-size:17px;color:#54565E;margin-top:12px;">Every day arrives with its city, weather, plan and places, ready before you go.</p>
     </div>
     <div class="showcase-grid reveal d1" style="display:grid;grid-template-columns:248px 1fr;background:#fff;border:1px solid #E6EBF3;border-radius:22px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04),0 28px 56px -34px rgba(16,24,40,.24);">
-      <div class="showcase-rail" style="border-right:1px solid #EDF1F7;padding:14px 0;">
-        <div style="font-size:12px;font-weight:600;color:#8A8D96;padding:6px 22px 10px;">Japan, 12 days</div>
-        <div style="display:flex;align-items:center;gap:13px;padding:13px 20px;border-left:3px solid transparent;"><span style="font-size:12px;font-weight:600;color:#9AA1AD;width:22px;">01</span><div><div style="font-size:14.5px;font-weight:600;">Tokyo</div><div style="font-size:11.5px;color:#8A8D96;">Wed 2 Sep</div></div></div>
-        <div style="display:flex;align-items:center;gap:13px;padding:13px 20px;border-left:3px solid transparent;"><span style="font-size:12px;font-weight:600;color:#9AA1AD;width:22px;">02</span><div><div style="font-size:14.5px;font-weight:600;">Hakone</div><div style="font-size:11.5px;color:#8A8D96;">Fri 4 Sep</div></div></div>
-        <div style="display:flex;align-items:center;gap:13px;padding:13px 20px;border-left:3px solid transparent;"><span style="font-size:12px;font-weight:600;color:#9AA1AD;width:22px;">03</span><div><div style="font-size:14.5px;font-weight:600;">Kyoto</div><div style="font-size:11.5px;color:#8A8D96;">Sat 5 Sep</div></div></div>
-        <div style="display:flex;align-items:center;gap:13px;padding:13px 20px;border-left:3px solid #41599C;background:rgba(65,89,156,.10);"><span style="font-size:12px;font-weight:600;color:#9AA1AD;width:22px;">04</span><div><div style="font-size:14.5px;font-weight:600;">Kyoto</div><div style="font-size:11.5px;color:#8A8D96;">Tue 8 Sep</div></div></div>
-        <div style="display:flex;align-items:center;gap:13px;padding:13px 20px;border-left:3px solid transparent;"><span style="font-size:12px;font-weight:600;color:#9AA1AD;width:22px;">05</span><div><div style="font-size:14.5px;font-weight:600;">Nara</div><div style="font-size:11.5px;color:#8A8D96;">Wed 9 Sep</div></div></div>
-      </div>
-      <div style="padding:26px 28px 28px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div style="font-size:27px;font-weight:700;letter-spacing:-.02em;">Kyoto, Day 4</div>
-            <div style="font-size:13.5px;color:#8A8D96;margin-top:5px;">Tuesday 8 September. Clear, 24°.</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:8px 13px;border-radius:10px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v1.5M12 19.5V21M5 5l1 1M18 18l1 1M3 12h1.5M19.5 12H21"/></svg>
-              Weather
-            </span>
-            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:8px 13px;border-radius:10px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
-              Open map
-            </span>
-          </div>
-        </div>
-        <div class="detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px;align-items:stretch;">
-          <div>
-            <div style="font-size:12px;font-weight:600;color:#8A8D96;margin-bottom:6px;">Plan for the day</div>
-            <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #F1F3F7;"><span style="width:18px;height:18px;border-radius:50%;flex:none;background:#41599C;border:none;"></span><span style="font-size:14px;font-weight:500;color:#9AA1AD;text-decoration:line-through;">Fushimi Inari at sunrise</span></div>
-            <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #F1F3F7;"><span style="width:18px;height:18px;border-radius:50%;flex:none;background:#fff;border:1.6px solid #D6DCE6;"></span><span style="font-size:14px;font-weight:500;color:#15161A;">Nishiki Market for lunch</span><span style="margin-left:auto;font-size:10.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:3px 9px;border-radius:999px;">Food</span></div>
-            <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #F1F3F7;"><span style="width:18px;height:18px;border-radius:50%;flex:none;background:#fff;border:1.6px solid #D6DCE6;"></span><span style="font-size:14px;font-weight:500;color:#15161A;">Kinkaku-ji, Golden Pavilion</span></div>
-            <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #F1F3F7;"><span style="width:18px;height:18px;border-radius:50%;flex:none;background:#fff;border:1.6px solid #D6DCE6;"></span><span style="font-size:14px;font-weight:500;color:#15161A;">Gion evening walk</span></div>
-          </div>
-          <div class="imgwrap zoom" style="border-radius:16px;min-height:226px;box-shadow:0 1px 2px rgba(16,24,40,.06);">
-            <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=900&q=80&auto=format&fit=crop" alt="A pagoda above Kyoto at dusk" loading="lazy" decoding="async">
-            <div style="position:absolute;left:13px;bottom:13px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#fff;background:rgba(20,24,34,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 11px;border-radius:999px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>
-              Kiyomizu-dera at dusk
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="showcase-rail" id="trip-rail" style="border-right:1px solid #EDF1F7;padding:14px 0;"></div>
+      <div id="trip-detail" style="padding:26px 28px 28px;transition:opacity .28s ease;"></div>
     </div>
   </div>
 </div>
@@ -460,6 +429,82 @@ img{display:block;max-width:100%;}
     }
     window.addEventListener('scroll', function(){ if(!ticking){ requestAnimationFrame(update); ticking = true; } }, { passive: true });
     update();
+  }
+
+  // ----- interactive sample trip -----
+  var DAYS = [
+    { n:'01', city:'Tokyo', day:'Day 1', date:'Wednesday 2 September', weather:'Humid, 29°', short:'Wed 2 Sep',
+      img:'1542051841857-5f90071e7989', cap:'Shibuya Crossing',
+      plan:[ {t:'Land at Haneda'}, {t:'Check in, Shinjuku', tag:'Stay'}, {t:'Senso-ji, Asakusa'}, {t:'Ramen in Omoide Yokocho', tag:'Food'} ] },
+    { n:'02', city:'Hakone', day:'Day 2', date:'Friday 4 September', weather:'Clear, 22°', short:'Fri 4 Sep',
+      img:'1490806843957-31f4c9a91c65', cap:'Lake Ashi & Mt Fuji',
+      plan:[ {t:'Romancecar from Shinjuku'}, {t:'Open-Air Museum'}, {t:'Onsen ryokan check-in', tag:'Stay'}, {t:'Kaiseki at the ryokan', tag:'Food'} ] },
+    { n:'03', city:'Kyoto', day:'Day 3', date:'Saturday 5 September', weather:'Clear, 25°', short:'Sat 5 Sep',
+      img:'1493976040374-85c8e12f0c0e', cap:'Gion at dusk',
+      plan:[ {t:'Shinkansen to Kyoto'}, {t:'Fushimi Inari shrine'}, {t:'Nishiki Market', tag:'Food'}, {t:'Pontocho in the evening'} ] },
+    { n:'04', city:'Kyoto', day:'Day 4', date:'Tuesday 8 September', weather:'Clear, 24°', short:'Tue 8 Sep',
+      img:'1545569341-9eb8b30979d9', cap:'Kiyomizu-dera at dusk',
+      plan:[ {t:'Fushimi Inari at sunrise', done:true}, {t:'Nishiki Market for lunch', tag:'Food'}, {t:'Kinkaku-ji, Golden Pavilion'}, {t:'Gion evening walk'} ] },
+    { n:'05', city:'Nara', day:'Day 5', date:'Wednesday 9 September', weather:'Sunny, 26°', short:'Wed 9 Sep',
+      img:'1578639755533-2c52ba911914', cap:'Todai-ji & the deer park',
+      plan:[ {t:'Train to Nara'}, {t:'Todai-ji Great Buddha'}, {t:'Feed the deer, Nara Park'}, {t:'Mochi at Nakatanidō', tag:'Food'} ] }
+  ];
+  var SVG_WEATHER = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v1.5M12 19.5V21M5 5l1 1M18 18l1 1M3 12h1.5M19.5 12H21"/></svg>';
+  var SVG_MAP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>';
+  var SVG_PHOTO = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>';
+  var rail = document.getElementById('trip-rail');
+  var detail = document.getElementById('trip-detail');
+  var current = 3; // default to Kyoto, Day 4
+
+  function railHTML(){
+    var h = '<div style="font-size:12px;font-weight:600;color:#8A8D96;padding:6px 22px 10px;">Japan, 12 days</div>';
+    DAYS.forEach(function(d, i){
+      var on = i === current;
+      h += '<div class="trip-day" data-day="' + i + '" role="button" tabindex="0" aria-pressed="' + on + '"'
+        + ' style="display:flex;align-items:center;gap:13px;padding:13px 20px;cursor:pointer;border-left:3px solid ' + (on?'#41599C':'transparent')
+        + ';background:' + (on?'rgba(65,89,156,.10)':'transparent') + ';transition:background .25s,border-color .25s;">'
+        + '<span style="font-size:12px;font-weight:600;color:' + (on?'#41599C':'#9AA1AD') + ';width:22px;">' + d.n + '</span>'
+        + '<div><div style="font-size:14.5px;font-weight:600;">' + d.city + '</div>'
+        + '<div style="font-size:11.5px;color:#8A8D96;">' + d.short + '</div></div></div>';
+    });
+    return h;
+  }
+  function detailHTML(d){
+    var plan = d.plan.map(function(p){
+      return '<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #F1F3F7;">'
+        + '<span style="width:18px;height:18px;border-radius:50%;flex:none;' + (p.done?'background:#41599C;border:none;':'background:#fff;border:1.6px solid #D6DCE6;') + '"></span>'
+        + '<span style="font-size:14px;font-weight:500;' + (p.done?'color:#9AA1AD;text-decoration:line-through;':'color:#15161A;') + '">' + p.t + '</span>'
+        + (p.tag?'<span style="margin-left:auto;font-size:10.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:3px 9px;border-radius:999px;">' + p.tag + '</span>':'')
+        + '</div>';
+    }).join('');
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">'
+      + '<div><div style="font-size:27px;font-weight:700;letter-spacing:-.02em;">' + d.city + ', ' + d.day + '</div>'
+      + '<div style="font-size:13.5px;color:#8A8D96;margin-top:5px;">' + d.date + '. ' + d.weather + '.</div></div>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:8px 13px;border-radius:10px;">' + SVG_WEATHER + ' Weather</span>'
+      + '<span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#41599C;background:rgba(65,89,156,.10);padding:8px 13px;border-radius:10px;">' + SVG_MAP + ' Open map</span>'
+      + '</div></div>'
+      + '<div class="detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px;align-items:stretch;">'
+      + '<div><div style="font-size:12px;font-weight:600;color:#8A8D96;margin-bottom:6px;">Plan for the day</div>' + plan + '</div>'
+      + '<div class="imgwrap zoom" style="border-radius:16px;min-height:226px;box-shadow:0 1px 2px rgba(16,24,40,.06);">'
+      + '<img src="https://images.unsplash.com/photo-' + d.img + '?w=900&q=80&auto=format&fit=crop" alt="' + d.cap + '" decoding="async">'
+      + '<div style="position:absolute;left:13px;bottom:13px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#fff;background:rgba(20,24,34,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 11px;border-radius:999px;">' + SVG_PHOTO + ' ' + d.cap + '</div>'
+      + '</div></div>';
+  }
+  function select(i, animate){
+    current = i;
+    rail.innerHTML = railHTML();
+    if (animate && !reduce) {
+      detail.style.opacity = '0';
+      setTimeout(function(){ detail.innerHTML = detailHTML(DAYS[i]); detail.style.opacity = '1'; }, 140);
+    } else {
+      detail.innerHTML = detailHTML(DAYS[i]);
+    }
+  }
+  if (rail && detail) {
+    rail.addEventListener('click', function(e){ var t = e.target.closest('.trip-day'); if (t) select(+t.getAttribute('data-day'), true); });
+    rail.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('trip-day')) { e.preventDefault(); select(+e.target.getAttribute('data-day'), true); } });
+    select(current, false);
   }
 })();
 </script>
