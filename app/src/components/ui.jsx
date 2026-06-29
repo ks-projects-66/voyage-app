@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Sun, Cloud, CloudRain, CloudSun, Plus, Star, X, ImagePlus, Clock } from "lucide-react";
 import { homeTime } from "../lib/helpers.js";
+import { isNative, pickNativePhoto, tapHaptic } from "../lib/native.js";
 
 export function HomeClock({ homeTz, homeCity }) {
 const [t, setT] = useState(() => homeTime(homeTz));
@@ -73,9 +74,16 @@ const f = (files || [])[idx];
 if (f && f.__preview) { try { URL.revokeObjectURL(f.__preview); } catch (e) {} }
 setFiles((files || []).filter((_, i) => i !== idx));
 };
+const addNative = async () => {
+await tapHaptic();
+const f = await pickNativePhoto();
+if (f) pick([f]);
+};
 return (
 <div className="photopicker">
-<label className="photobtn"><ImagePlus size={15} /> Add photos<input type="file" accept="image/*" multiple onChange={e => pick(e.target.files)} /></label>
+{isNative
+? <button type="button" className="photobtn" onClick={addNative}><ImagePlus size={15} /> Add photo</button>
+: <label className="photobtn"><ImagePlus size={15} /> Add photos<input type="file" accept="image/*" multiple onChange={e => pick(e.target.files)} /></label>}
 <div className="muted xs">Photos upload to your account when you save.</div>
 {!!(files || []).length && <div className="photochips">{files.map((f, i) => <button key={i} className="photochip" onClick={() => remove(i)}><img src={f.__preview} alt="" /><span>×</span></button>)}</div>}
 </div>

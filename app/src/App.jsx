@@ -6,6 +6,7 @@ import { MyTrips } from "./components/MyTrips.jsx";
 import { SetupWizard } from "./components/SetupWizard.jsx";
 import { TripApp } from "./components/TripApp.jsx";
 import { PublicRecap } from "./components/ShareRecap.jsx";
+import { initNative } from "./lib/native.js";
 
 function App() {
 const publicToken = useMemo(() => new URLSearchParams(window.location.search).get("recap"), []);
@@ -21,6 +22,7 @@ const [toast, setToast] = useState("");
 const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1800); };
 
 useEffect(() => {
+initNative();
 supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthChecked(true); });
 const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
 return () => { sub.subscription.unsubscribe(); };

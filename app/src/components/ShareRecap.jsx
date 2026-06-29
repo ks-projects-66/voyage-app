@@ -6,6 +6,7 @@ UtensilsCrossed, Wine, Link as LinkIcon, Download,
 import { TYPE_META } from "../lib/constants.js";
 import { buildRecapSnapshot, publicRecapUrl, uid } from "../lib/helpers.js";
 import { OverlaySheet, RateRow, PhotoPicker, Card, Stat } from "./ui.jsx";
+import { shareLink } from "../lib/native.js";
 
 export function ShareTrip({ ctx, onClose }) {
 const { members, refreshMembers, runSave, db, trip, flash, copy, days, state } = ctx;
@@ -26,8 +27,10 @@ try {
 const snapshot = buildRecapSnapshot(trip, days, state);
 const token = await runSave("Publishing recap...", () => db.saveRecapShare(trip.id, snapshot));
 const url = publicRecapUrl(token);
-setRecapUrl(url); copy(url, "Recap link");
-} catch (e) { flash("Recap sharing needs the Supabase migration"); }
+setRecapUrl(url);
+const r = await shareLink({ title: trip.name, text: `${trip.name} — trip recap`, url });
+flash(r === "shared" ? "Recap shared" : r === "copied" ? "Recap link copied" : "Recap link ready");
+} catch (e) { flash("Could not publish recap, please try again"); }
 };
 return (
 <OverlaySheet title="Share trip" onClose={onClose}>
@@ -112,8 +115,10 @@ const publish = async () => {
 try {
 const token = await runSave("Publishing recap...", () => db.saveRecapShare(trip.id, snapshot));
 const next = publicRecapUrl(token);
-setUrl(next); copy(next, "Recap link");
-} catch (e) { flash("Recap sharing needs the Supabase migration"); }
+setUrl(next);
+const r = await shareLink({ title: trip.name, text: `${trip.name} — trip recap`, url: next });
+flash(r === "shared" ? "Recap shared" : r === "copied" ? "Recap link copied" : "Recap link ready");
+} catch (e) { flash("Could not publish recap, please try again"); }
 };
 return (
 <div className="page">
