@@ -7,6 +7,7 @@ import { SetupWizard } from "./components/SetupWizard.jsx";
 import { TripApp } from "./components/TripApp.jsx";
 import { PublicRecap } from "./components/ShareRecap.jsx";
 import { initNative } from "./lib/native.js";
+import { InstallHint } from "./components/InstallHint.jsx";
 
 function App() {
 const publicToken = useMemo(() => new URLSearchParams(window.location.search).get("recap"), []);
@@ -23,7 +24,7 @@ const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1800); };
 
 useEffect(() => {
 initNative();
-supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthChecked(true); });
+supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthChecked(true); }).catch(() => setAuthChecked(true));
 const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
 return () => { sub.subscription.unsubscribe(); };
 }, []);
@@ -69,7 +70,7 @@ const signOut = async () => { await supabase.auth.signOut(); };
 
 if (publicToken) return <div className="app">{publicRecap ? <PublicRecap snapshot={publicRecap} /> : <div className="page"><div className="muted sm empty pad">{publicErr || "Loading recap..."}</div></div>}</div>;
 if (!authChecked) return <div className="app"></div>;
-if (!session) return <div className="app"><AuthScreen /></div>;
+if (!session) return <div className="app"><AuthScreen /><InstallHint /></div>;
 
 return (
 <div className="app">
@@ -81,6 +82,7 @@ onOpen={openTrip}
 onDeleted={loadTrips}
 onSignOut={signOut} flash={flash} />
 )}
+{view === "trips" && <InstallHint />}
 {view === "wizard" && (
 <SetupWizard onCancel={() => setView("trips")} onCreated={onTripCreated} flash={flash} />
 )}
