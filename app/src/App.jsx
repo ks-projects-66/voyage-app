@@ -24,9 +24,15 @@ const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1800); };
 
 useEffect(() => {
 initNative();
-supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthChecked(true); }).catch(() => setAuthChecked(true));
-const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-return () => { sub.subscription.unsubscribe(); };
+// Never let a slow/failed getSession leave the app on a blank screen — flip
+// authChecked on whichever happens first: session resolves, errors, the auth
+// listener fires, or a short timeout. Session stays live via onAuthStateChange.
+let checked = false;
+const markChecked = () => { if (!checked) { checked = true; setAuthChecked(true); } };
+supabase.auth.getSession().then(({ data }) => { setSession(data.session); markChecked(); }).catch(markChecked);
+const t = setTimeout(markChecked, 3500);
+const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); markChecked(); });
+return () => { clearTimeout(t); sub.subscription.unsubscribe(); };
 }, []);
 
 useEffect(() => {
