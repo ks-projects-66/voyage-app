@@ -353,6 +353,15 @@ if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
 const { error } = await supabase.from("wl_trips").delete().eq("id", id);
 if (error) throw error;
 },
+async deleteAccount() {
+// Permanently deletes the account and all data via the delete-account Edge Function
+// (runs with the service role). The JWT is attached automatically by invoke().
+const { data, error } = await supabase.functions.invoke("delete-account", { method: "POST" });
+if (error) throw error;
+if (data && data.error) throw new Error(data.error);
+await supabase.auth.signOut();
+return true;
+},
 async loadTripData(tripId) {
 const [placesRes, statusRes, journalRes, photosRes, privRes] = await Promise.all([
 supabase.from("wl_places").select("*").eq("trip_id", tripId),

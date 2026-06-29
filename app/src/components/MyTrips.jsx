@@ -10,6 +10,12 @@ if (!window.confirm(`Delete "${t.name}"? This removes its itinerary, journal and
 try { await db.deleteTrip(t.id); flash("Trip deleted"); onDeleted(); }
 catch (err) { flash("Delete failed"); }
 };
+const delAccount = async () => {
+if (!window.confirm("Delete your account? This permanently removes all your trips, journal entries, photos and your sign-in. This cannot be undone.")) return;
+if (!window.confirm("Are you absolutely sure? This is permanent and immediate.")) return;
+try { flash("Deleting your account…"); await db.deleteAccount(); }
+catch (err) { flash("Account deletion failed, please try again"); }
+};
 return (
 <div className="scroll solo">
 <header className="topbar">
@@ -48,6 +54,9 @@ return (
 );
 })}</div>}
 <button className="primary newtrip" onClick={onNew}><Plus size={16} /> New trip</button>
+<div className="account-footer">
+<button className="link-danger" onClick={delAccount}>Delete account</button>
+</div>
 </div>
 </div>
 );

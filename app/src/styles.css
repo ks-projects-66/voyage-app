@@ -243,3 +243,9 @@ input,select,textarea,button{font-family:inherit;}select{appearance:none;-webkit
   .app{max-width:1080px;}
   .page.wide{max-width:1040px;}
 }
+
+/* account deletion (App Store requirement) */
+.account-footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:center;}
+.link-danger{background:none;border:none;color:#C2410C;font-size:13px;font-weight:600;cursor:pointer;padding:9px 14px;border-radius:9px;transition:background .2s;}
+.link-danger:hover{background:rgba(194,65,12,.09);}
+.link-danger:active{transform:scale(.98);}
