@@ -257,3 +257,6 @@ input,select,textarea,button{font-family:inherit;}select{appearance:none;-webkit
 .installhint-s strong{color:var(--ink);font-weight:700;}
 .installhint-btn{margin-top:11px;background:var(--accent);color:#fff;border:none;border-radius:11px;padding:9px 18px;font-size:13.5px;font-weight:700;font-family:var(--sans);cursor:pointer;}
 .installhint-x{position:absolute;top:11px;right:11px;background:var(--fill);border:none;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--ink2);cursor:pointer;}
+
+/* forgot-password link */
+.viewerbtn.subtle{opacity:.72;font-size:13px;margin-top:1px;}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "./lib/supabase.js";
 import { db } from "./lib/helpers.js";
-import { AuthScreen } from "./components/AuthScreen.jsx";
+import { AuthScreen, ResetPassword } from "./components/AuthScreen.jsx";
 import { MyTrips } from "./components/MyTrips.jsx";
 import { SetupWizard } from "./components/SetupWizard.jsx";
 import { TripApp } from "./components/TripApp.jsx";
@@ -15,6 +15,7 @@ const [publicRecap, setPublicRecap] = useState(null);
 const [publicErr, setPublicErr] = useState("");
 const [session, setSession] = useState(null);
 const [authChecked, setAuthChecked] = useState(false);
+const [recovery, setRecovery] = useState(false);
 const [view, setView] = useState("trips"); // trips | wizard | trip
 const [trips, setTrips] = useState(null); // null = loading
 const [legCounts, setLegCounts] = useState({});
@@ -31,7 +32,7 @@ let checked = false;
 const markChecked = () => { if (!checked) { checked = true; setAuthChecked(true); } };
 supabase.auth.getSession().then(({ data }) => { setSession(data.session); markChecked(); }).catch(markChecked);
 const t = setTimeout(markChecked, 3500);
-const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); markChecked(); });
+const { data: sub } = supabase.auth.onAuthStateChange((event, s) => { setSession(s); markChecked(); if (event === "PASSWORD_RECOVERY") setRecovery(true); });
 return () => { clearTimeout(t); sub.subscription.unsubscribe(); };
 }, []);
 
@@ -76,6 +77,7 @@ const signOut = async () => { await supabase.auth.signOut(); };
 
 if (publicToken) return <div className="app">{publicRecap ? <PublicRecap snapshot={publicRecap} /> : <div className="page"><div className="muted sm empty pad">{publicErr || "Loading recap..."}</div></div>}</div>;
 if (!authChecked) return <div className="app"></div>;
+if (recovery) return <div className="app"><ResetPassword onDone={() => { setRecovery(false); flash("Password updated"); }} /></div>;
 if (!session) return <div className="app"><AuthScreen /><InstallHint /></div>;
 
 return (
