@@ -48,19 +48,35 @@ img{display:block;max-width:100%;}
 .trip-day:hover{background:rgba(65,89,156,.09) !important;}
 .trip-day:focus-visible{outline:2px solid #41599C;outline-offset:-2px;border-radius:4px;}
 
-/* ---------- journey route ---------- */
-.route-track,.route-fill{position:absolute;top:29px;left:8.33%;height:0;z-index:0;}
-.route-track{right:8.33%;border-top:2px dashed #CBD4E6;}
-.route-fill{width:0;border-top:2px dashed #41599C;transition:width 1.6s cubic-bezier(.16,.84,.44,1);}
-.route.in .route-fill{width:83.34%;}
-.route-step{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative;z-index:1;}
-.route-dot{width:58px;height:58px;border-radius:18px;background:linear-gradient(180deg,#FFFFFF 0%,#F2F5FC 100%);border:1px solid #E3E9F3;color:#AEB6C6;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 24px -12px rgba(20,30,60,.32), inset 0 1px 0 rgba(255,255,255,.9);transition:color .55s ease,border-color .55s ease,transform .5s cubic-bezier(.16,.84,.44,1),box-shadow .5s ease;}
-.route-dot svg{width:25px;height:25px;}
-.route.in .route-dot{color:#41599C;border-color:#D2DBEE;}
-.route-dot:hover{transform:translateY(-4px);box-shadow:0 20px 32px -14px rgba(65,89,156,.45);}
-.route-lbl{font-size:13.5px;font-weight:700;letter-spacing:-.01em;color:#6E6E73;transition:color .55s ease;}
-.route.in .route-lbl{color:#15161A;}
-@media (prefers-reduced-motion: reduce){ .route-fill,.route-dot,.route-lbl{transition:none !important;} }
+/* ---------- journey sequence ---------- */
+.seq{position:relative;max-width:780px;margin:0 auto;}
+.seq-spot{position:absolute;top:34px;left:8.33%;width:230px;height:150px;transform:translate(-50%,-50%);background:radial-gradient(closest-side, rgba(77,97,170,.10), rgba(77,97,170,0) 78%);transition:left .6s cubic-bezier(.16,.84,.44,1);pointer-events:none;z-index:0;}
+.seq-row{position:relative;z-index:1;display:grid;grid-template-columns:repeat(6,1fr);align-items:start;}
+.seq-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:9px;padding:14px 4px 10px;}
+.seq-stage::before{content:"";position:absolute;inset:6px 8px;border-radius:13px;background:#F5F7FC;border:1px solid #E7E9F0;box-shadow:0 8px 20px -10px rgba(57,75,145,.28);opacity:0;transform:scale(.94);transition:opacity .4s ease,transform .45s cubic-bezier(.16,.84,.44,1);z-index:-1;}
+.seq-num{font-size:11px;font-weight:700;letter-spacing:.08em;color:#4D61AA;opacity:0;transform:translateY(3px);transition:opacity .4s ease,transform .4s ease;font-variant-numeric:tabular-nums;}
+.seq-word{font-size:21px;font-weight:700;letter-spacing:-.02em;color:#9AA1AD;transition:color .5s ease,transform .5s cubic-bezier(.16,.84,.44,1);}
+.seq-ul{width:20px;height:2px;border-radius:2px;background:#4D61AA;transform:scaleX(0);opacity:0;transition:transform .5s cubic-bezier(.16,.84,.44,1),opacity .4s ease;}
+/* progress states (set by JS) */
+.seq.js .seq-stage.is-done .seq-word{color:#8C99C4;}
+.seq.js .seq-stage.is-active .seq-word{color:#15161A;transform:translateY(-5px) scale(1.05);}
+.seq.js .seq-stage.is-active::before{opacity:1;transform:scale(1);}
+.seq.js .seq-stage.is-active .seq-num{opacity:1;transform:none;}
+.seq.js .seq-stage.is-active .seq-ul{transform:scaleX(1);opacity:1;}
+/* no-JS / pre-init: readable, calm static state */
+.seq:not(.js) .seq-word{color:#394B91;}
+.seq:not(.js) .seq-spot{display:none;}
+/* context line */
+.seq-ctx{margin-top:22px;text-align:center;font-size:14.5px;font-weight:600;transition:opacity .3s ease;}
+.seq-ctx .a{color:#394B91;}
+.seq-ctx .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:#4D61AA;margin:0 9px;vertical-align:middle;}
+.seq-ctx .b{color:#8A8D96;font-weight:500;}
+@media (prefers-reduced-motion: reduce){
+  .seq-spot{display:none;}
+  .seq-stage .seq-word{transition:none;}
+  .seq.js .seq-stage.is-active .seq-word{transform:none;}
+  .seq.js .seq-stage::before,.seq.js .seq-stage.is-active::before{transition:none;}
+}
 
 /* ---------- motion ---------- */
 .reveal{opacity:1;transform:none;}
@@ -89,8 +105,9 @@ img{display:block;max-width:100%;}
   .detail-grid{grid-template-columns:1fr !important;}
   .journal-grid{grid-template-columns:1fr 1fr !important;}
   .dest-grid{grid-template-columns:1fr 1fr !important;}
-  .route{grid-template-columns:repeat(3,1fr) !important;row-gap:30px !important;}
-  .route-track,.route-fill{display:none !important;}
+  .seq-row{grid-template-columns:repeat(3,1fr) !important;row-gap:18px !important;}
+  .seq-spot{display:none !important;}
+  .seq-word{font-size:19px !important;}
   .band-copy{padding:40px 26px !important;}
   .band h2{font-size:30px !important;}
 }
@@ -215,36 +232,20 @@ img{display:block;max-width:100%;}
   </div>
 </div>
 
-<!-- ===== journey route ===== -->
-<div style="border-bottom:1px solid #EDF1F7;padding:56px 28px;">
+<!-- ===== journey sequence ===== -->
+<div style="border-top:1px solid #E7E9F0;border-bottom:1px solid #E7E9F0;padding:64px 28px;background:#fff;">
   <div class="wrap">
-    <div class="route reveal" style="position:relative;display:grid;grid-template-columns:repeat(6,1fr);max-width:740px;margin:0 auto;">
-      <div class="route-track"></div>
-      <div class="route-fill"></div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:0s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7M3 13h18"/></svg></div>
-        <div class="route-lbl">Trip</div>
+    <div class="seq reveal" id="seq">
+      <div class="seq-spot" aria-hidden="true"></div>
+      <div class="seq-row">
+        <div class="seq-stage" data-i="0"><span class="seq-num">01</span><span class="seq-word">Trip</span><span class="seq-ul"></span></div>
+        <div class="seq-stage" data-i="1"><span class="seq-num">02</span><span class="seq-word">Day</span><span class="seq-ul"></span></div>
+        <div class="seq-stage" data-i="2"><span class="seq-num">03</span><span class="seq-word">City</span><span class="seq-ul"></span></div>
+        <div class="seq-stage" data-i="3"><span class="seq-num">04</span><span class="seq-word">Plan</span><span class="seq-ul"></span></div>
+        <div class="seq-stage" data-i="4"><span class="seq-num">05</span><span class="seq-word">Places</span><span class="seq-ul"></span></div>
+        <div class="seq-stage" data-i="5"><span class="seq-num">06</span><span class="seq-word">Journal</span><span class="seq-ul"></span></div>
       </div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:.25s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div>
-        <div class="route-lbl">Day</div>
-      </div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:.5s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/></svg></div>
-        <div class="route-lbl">City</div>
-      </div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:.75s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6h9M11 12h9M11 18h9"/><path d="M3.5 6 5 7.5 8 4.5M3.5 17.5 5 19l3-3"/></svg></div>
-        <div class="route-lbl">Plan</div>
-      </div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:1s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
-        <div class="route-lbl">Places</div>
-      </div>
-      <div class="route-step">
-        <div class="route-dot" style="transition-delay:1.25s"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h6a3 3 0 0 1 3 3v13a2.4 2.4 0 0 0-2.4-2.4H3Z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3v13a2.4 2.4 0 0 1 2.4-2.4H21Z"/></svg></div>
-        <div class="route-lbl">Journal</div>
-      </div>
+      <div class="seq-ctx" id="seq-ctx" aria-live="polite"><span class="a">Your cities</span><span class="dot"></span><span class="b">your dates</span></div>
     </div>
   </div>
 </div>
@@ -521,6 +522,58 @@ img{display:block;max-width:100%;}
     rail.addEventListener('click', function(e){ var t = e.target.closest('.trip-day'); if (t) select(+t.getAttribute('data-day'), true); });
     rail.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('trip-day')) { e.preventDefault(); select(+e.target.getAttribute('data-day'), true); } });
     select(current, false);
+  }
+
+  // ----- journey sequence: scroll-linked active stage (no pinning) -----
+  var seq = document.getElementById('seq');
+  var seqCtx = document.getElementById('seq-ctx');
+  if (seq) {
+    var stages = Array.prototype.slice.call(seq.querySelectorAll('.seq-stage'));
+    var spot = seq.querySelector('.seq-spot');
+    var CTX = [
+      ['Your cities', 'your dates'],
+      ['Every day', 'built for you'],
+      ['Each stop', 'its own weather'],
+      ['A plan', 'in walking order'],
+      ['Saved spots', 'ready in your map'],
+      ['Meals & moments', 'kept for later']
+    ];
+    seq.classList.add('js');
+    if (reduce) {
+      // Static, calm sequence — no scroll behaviour, no transforms.
+      stages.forEach(function (s) { s.classList.add('is-done'); });
+    } else {
+      var current = -1;
+      var setStage = function (i) {
+        if (i === current) return;
+        current = i;
+        stages.forEach(function (s, idx) {
+          s.classList.toggle('is-active', idx === i);
+          s.classList.toggle('is-done', idx < i);
+        });
+        var r = stages[i].getBoundingClientRect();
+        var base = seq.getBoundingClientRect();
+        spot.style.left = (r.left + r.width / 2 - base.left) + 'px';
+        seqCtx.style.opacity = '0';
+        setTimeout(function () {
+          seqCtx.innerHTML = '<span class="a">' + CTX[i][0] + '</span><span class="dot"></span><span class="b">' + CTX[i][1] + '</span>';
+          seqCtx.style.opacity = '1';
+        }, 150);
+      };
+      var sTick = false;
+      var seqScroll = function () {
+        var r = seq.getBoundingClientRect();
+        var total = r.height + window.innerHeight;
+        var p = (window.innerHeight - r.top) / total; // 0..1 across full transit
+        var i = Math.floor(p * 6);
+        if (i < 0) i = 0; if (i > 5) i = 5;
+        setStage(i);
+        sTick = false;
+      };
+      window.addEventListener('scroll', function () { if (!sTick) { requestAnimationFrame(seqScroll); sTick = true; } }, { passive: true });
+      window.addEventListener('resize', function () { var s = current; current = -1; if (s >= 0) setStage(s); }, { passive: true });
+      seqScroll();
+    }
   }
 })();
 </script>
