@@ -49,14 +49,16 @@ img{display:block;max-width:100%;}
 .trip-day:focus-visible{outline:2px solid #41599C;outline-offset:-2px;border-radius:4px;}
 
 /* ---------- journey route ---------- */
-.route-track,.route-fill{position:absolute;top:24px;height:3px;border-radius:3px;}
-.route-track{left:8.33%;right:8.33%;background:#E3E7EF;}
-.route-fill{left:8.33%;width:0;background:#41599C;transition:width 1.5s cubic-bezier(.16,.84,.44,1);}
+.route-track,.route-fill{position:absolute;top:29px;left:8.33%;height:0;z-index:0;}
+.route-track{right:8.33%;border-top:2px dashed #CBD4E6;}
+.route-fill{width:0;border-top:2px dashed #41599C;transition:width 1.6s cubic-bezier(.16,.84,.44,1);}
 .route.in .route-fill{width:83.34%;}
-.route-step{display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;z-index:1;}
-.route-dot{width:50px;height:50px;border-radius:50%;background:#EEF1F6;color:#9AA1AD;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 1px 2px rgba(20,30,60,.06);transition:background .55s ease,color .55s ease,box-shadow .55s ease,transform .55s ease;}
-.route.in .route-dot{background:rgba(65,89,156,.12);color:#41599C;box-shadow:0 10px 20px -8px rgba(65,89,156,.5);}
-.route-lbl{font-size:13.5px;font-weight:600;color:#6E6E73;transition:color .55s ease;}
+.route-step{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative;z-index:1;}
+.route-dot{width:58px;height:58px;border-radius:18px;background:linear-gradient(180deg,#FFFFFF 0%,#F2F5FC 100%);border:1px solid #E3E9F3;color:#AEB6C6;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 24px -12px rgba(20,30,60,.32), inset 0 1px 0 rgba(255,255,255,.9);transition:color .55s ease,border-color .55s ease,transform .5s cubic-bezier(.16,.84,.44,1),box-shadow .5s ease;}
+.route-dot svg{width:25px;height:25px;}
+.route.in .route-dot{color:#41599C;border-color:#D2DBEE;}
+.route-dot:hover{transform:translateY(-4px);box-shadow:0 20px 32px -14px rgba(65,89,156,.45);}
+.route-lbl{font-size:13.5px;font-weight:700;letter-spacing:-.01em;color:#6E6E73;transition:color .55s ease;}
 .route.in .route-lbl{color:#15161A;}
 @media (prefers-reduced-motion: reduce){ .route-fill,.route-dot,.route-lbl{transition:none !important;} }
 
@@ -216,7 +218,7 @@ img{display:block;max-width:100%;}
 <!-- ===== journey route ===== -->
 <div style="border-bottom:1px solid #EDF1F7;padding:56px 28px;">
   <div class="wrap">
-    <div class="route reveal" style="position:relative;display:grid;grid-template-columns:repeat(6,1fr);max-width:880px;margin:0 auto;">
+    <div class="route reveal" style="position:relative;display:grid;grid-template-columns:repeat(6,1fr);max-width:740px;margin:0 auto;">
       <div class="route-track"></div>
       <div class="route-fill"></div>
       <div class="route-step">
