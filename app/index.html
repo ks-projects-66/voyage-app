@@ -15,9 +15,26 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<style>html,body,#root{height:100%;margin:0}body{background:#F2F2F7;-webkit-text-size-adjust:100%}</style>
+<style>
+html,body,#root{height:100%;margin:0}body{background:#F2F2F7;-webkit-text-size-adjust:100%}
+/* Mobile polish for the trip landing screen */
+.kicker{display:none!important}.topbar{padding-top:calc(24px + env(safe-area-inset-top))!important}.brandline{margin-top:0!important}.pwa strong{font-weight:inherit!important}.install strong{font-weight:inherit!important}
+</style>
   <script type="module" crossorigin src="./assets/index-Cv7rp7Pw.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-BIEa7uzZ.css">
+<script>
+(function(){
+  function tidyVoyageMobile(){
+    document.querySelectorAll('.kicker').forEach(function(el){ if ((el.textContent||'').trim().toLowerCase()==='voyage') el.remove(); });
+    document.querySelectorAll('strong').forEach(function(el){
+      if ((el.textContent||'').trim()==='Add to Home Screen') el.replaceWith(document.createTextNode(el.textContent));
+    });
+  }
+  window.addEventListener('DOMContentLoaded', tidyVoyageMobile);
+  window.addEventListener('load', tidyVoyageMobile);
+  new MutationObserver(tidyVoyageMobile).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </head>
 <body>
 <div id="root"></div>
