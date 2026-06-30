@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Voyage, plan any trip anywhere</title>
-<meta name="description" content="Voyage turns any set of destinations and dates into a day by day travel companion: itinerary, live weather, time zones, a shared journal, places to explore, and a recap to share. Free.">
-<meta property="og:title" content="Voyage, plan any trip anywhere">
-<meta property="og:description" content="From the first booking to the last meal, a day by day companion for any trip.">
+<title>Voyage, for travellers who care about every day of the trip</title>
+<meta name="description" content="Voyage keeps your cities, plans, saved places, notes and memories together, so each day of your trip is easier to enjoy and harder to forget.">
+<meta property="og:title" content="Voyage, for travellers who care about every day of the trip">
+<meta property="og:description" content="Keep your cities, plans, saved places, notes and memories together from the first idea to the favourite memory.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80&auto=format&fit=crop">
 <meta name="theme-color" content="#41599C">
@@ -48,20 +48,24 @@ img{display:block;max-width:100%;}
 .trip-day:hover{background:rgba(65,89,156,.09) !important;}
 .trip-day:focus-visible{outline:2px solid #41599C;outline-offset:-2px;border-radius:4px;}
 
-/* ---------- app tabs ---------- */
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;max-width:960px;margin:0 auto;}
-.tabcard{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:24px 22px;background:linear-gradient(180deg,#FFFFFF 0%,#F7F9FE 100%);border:1px solid #E6EBF3;border-radius:22px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 22px 44px -30px rgba(16,24,40,.2);}
-.tab-ico{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FFFFFF 0%,#EEF2FB 100%);border:1px solid #E0E7F4;color:#41599C;box-shadow:0 10px 20px -12px rgba(20,30,60,.28),inset 0 1px 0 rgba(255,255,255,.9);}
-.tab-ico svg{width:24px;height:24px;}
-.tab-name{font-size:17px;font-weight:700;letter-spacing:-.02em;color:#15161A;}
-.tab-desc{font-size:13.5px;line-height:1.5;color:#54565E;margin-top:6px;}
-.tabcard.active{border-color:#C9D4EC;box-shadow:0 1px 2px rgba(16,24,40,.04),0 24px 46px -26px rgba(65,89,156,.4);}
-.tabcard.active .tab-ico{background:linear-gradient(180deg,#4E66AC 0%,#41599C 100%);border-color:#41599C;color:#fff;box-shadow:0 12px 22px -10px rgba(65,89,156,.55),inset 0 1px 0 rgba(255,255,255,.22);}
+/* ---------- semibold headings ---------- */
+h1,h2{font-weight:600 !important;}
+
+/* ---------- how it works (chevron flow) ---------- */
+.flow{display:flex;gap:10px;max-width:980px;margin:0 auto;}
+.step{flex:1;position:relative;padding:38px 42px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:196px;clip-path:polygon(0 0, calc(100% - 26px) 0, 100% 50%, calc(100% - 26px) 100%, 0 100%, 26px 50%);}
+.step:first-child{clip-path:polygon(0 0, calc(100% - 26px) 0, 100% 50%, calc(100% - 26px) 100%, 0 100%);}
+.step:last-child{clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, 26px 50%);}
+.step.s1{background:linear-gradient(135deg,#6378B6,#4E68AC);}
+.step.s2{background:linear-gradient(135deg,#41599C,#374A82);}
+.step.s3{background:linear-gradient(135deg,#1D2748,#0E1430);}
+.step-ico{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);color:#fff;margin-bottom:16px;}
+.step-ico svg{width:24px;height:24px;}
+.step-name{font-size:21px;font-weight:600;letter-spacing:-.01em;}
+.step-desc{font-size:14px;line-height:1.5;color:rgba(255,255,255,.84);margin-top:8px;max-width:25ch;}
 @media (prefers-reduced-motion: no-preference){
-  .tabcard{transition:transform .45s cubic-bezier(.16,.84,.44,1),box-shadow .45s ease,border-color .45s ease;}
-  .tabcard:hover{transform:translateY(-6px);border-color:#D2DBEE;box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 54px -26px rgba(65,89,156,.38);}
-  .tab-ico{transition:transform .45s cubic-bezier(.16,.84,.44,1);}
-  .tabcard:hover .tab-ico{transform:translateY(-2px) scale(1.05);}
+  .step{transition:transform .45s cubic-bezier(.16,.84,.44,1);}
+  .step:hover{transform:translateY(-4px);}
 }
 
 /* ---------- motion ---------- */
@@ -91,7 +95,8 @@ img{display:block;max-width:100%;}
   .detail-grid{grid-template-columns:1fr !important;}
   .journal-grid{grid-template-columns:1fr 1fr !important;}
   .dest-grid{grid-template-columns:1fr 1fr !important;}
-  .tabs{grid-template-columns:repeat(2,1fr) !important;gap:14px !important;}
+  .flow{flex-direction:column;gap:12px;}
+  .step,.step:first-child,.step:last-child{clip-path:none;border-radius:18px;min-height:0;padding:26px 24px;}
   .band-copy{padding:40px 26px !important;}
   .band h2{font-size:30px !important;}
 }
@@ -125,12 +130,12 @@ img{display:block;max-width:100%;}
 <div style="position:relative;background:radial-gradient(1100px 460px at 82% -8%,#EAEFF9 0%,rgba(234,239,249,0) 60%),linear-gradient(180deg,#FFFFFF 0%,#F7F9FE 100%);overflow:hidden;">
   <div class="wrap hero-in" style="position:relative;padding:84px 28px 96px;display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center;">
     <div>
-      <h1 class="reveal" style="font-size:58px;line-height:1.01;font-weight:700;letter-spacing:-.04em;max-width:13ch;">Every day of the trip, in one quiet place.</h1>
-      <p class="lede reveal d2" style="font-size:18.5px;color:#54565E;margin-top:22px;max-width:34ch;">From the first booking to the last meal, Voyage turns your destinations and dates into a day by day companion you will actually want to open.</p>
+      <h1 class="reveal" style="font-size:58px;line-height:1.02;font-weight:600;letter-spacing:-.04em;max-width:13ch;">For travellers who care about every day of the trip.</h1>
+      <p class="lede reveal d2" style="font-size:18.5px;color:#54565E;margin-top:22px;max-width:36ch;">Keep your cities, plans, saved places, notes and memories together, so the trip is easier to enjoy and harder to forget.</p>
       <div class="cta-row reveal d3" style="display:flex;gap:12px;margin-top:30px;align-items:center;flex-wrap:wrap;">
         <a href="./app/" class="btn btn-primary" style="font-size:15px;padding:14px 22px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
-          Get started, it's free
+          Start your first trip
         </a>
         <a href="#itinerary" class="btn btn-ghost" style="font-size:15px;padding:13px 20px;">See a sample trip</a>
       </div>
@@ -216,29 +221,28 @@ img{display:block;max-width:100%;}
   </div>
 </div>
 
-<!-- ===== app tabs ===== -->
-<div style="border-bottom:1px solid #EDF1F7;padding:66px 28px 70px;">
+<!-- ===== how it works ===== -->
+<div style="border-bottom:1px solid #EDF1F7;padding:66px 28px 74px;">
   <div class="wrap">
-    <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto 42px;">
-      <h2 style="font-size:33px;line-height:1.1;font-weight:700;letter-spacing:-.03em;">Four tabs, your whole trip</h2>
-      <p style="font-size:16.5px;color:#54565E;margin-top:12px;">The same four you live in while you travel, each one a tap away at the foot of the app.</p>
+    <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto 40px;">
+      <h2 style="font-size:33px;line-height:1.1;letter-spacing:-.03em;">How Voyage works</h2>
+      <p style="font-size:16.5px;color:#54565E;margin-top:12px;">Three simple stages, from the first idea to the memories you keep.</p>
     </div>
-    <div class="tabs">
-      <div class="tabcard active reveal d1">
-        <div class="tab-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div>
-        <div class="tab-txt"><div class="tab-name">Today</div><div class="tab-desc">The day in front of you: the plan, the weather and what is next.</div></div>
+    <div class="flow">
+      <div class="step s1 reveal d1">
+        <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div>
+        <div class="step-name">Plan</div>
+        <div class="step-desc">Add your cities and dates, and Voyage builds the day-by-day itinerary around your route.</div>
       </div>
-      <div class="tabcard reveal d2">
-        <div class="tab-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div>
-        <div class="tab-txt"><div class="tab-name">Days</div><div class="tab-desc">Every day of the trip, laid out from the first to the last.</div></div>
+      <div class="step s2 reveal d2">
+        <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>
+        <div class="step-name">Travel</div>
+        <div class="step-desc">Each day gives you the plan, live weather, your saved places and the route to walk them.</div>
       </div>
-      <div class="tabcard reveal d3">
-        <div class="tab-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4.5h6a3 3 0 0 1 3 3v13a2.4 2.4 0 0 0-2.4-2.4H3Z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3v13a2.4 2.4 0 0 1 2.4-2.4H21Z"/></svg></div>
-        <div class="tab-txt"><div class="tab-name">Journal</div><div class="tab-desc">Meals, wines and moments, saved with a photo as you go.</div></div>
-      </div>
-      <div class="tabcard reveal d4">
-        <div class="tab-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><polygon points="16 8 14 14 8 16 10 10"/></svg></div>
-        <div class="tab-txt"><div class="tab-name">Explore</div><div class="tab-desc">Places worth your time in every city you visit.</div></div>
+      <div class="step s3 reveal d3">
+        <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 14c1.5-1.5 3-3.4 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.1 1.5 4 3 5.5l7 7z"/></svg></div>
+        <div class="step-name">Remember</div>
+        <div class="step-desc">Log meals, wines and moments as you go, then keep them as a recap worth sharing.</div>
       </div>
     </div>
   </div>
@@ -248,8 +252,8 @@ img{display:block;max-width:100%;}
 <div id="itinerary" style="background:#F6F9FE;border-bottom:1px solid #EDF1F7;">
   <div class="wrap" style="padding:84px 28px;">
     <div class="reveal" style="text-align:center;max-width:620px;margin:0 auto 44px;">
-      <h2 style="font-size:39px;line-height:1.08;font-weight:700;letter-spacing:-.03em;">See a whole trip laid out</h2>
-      <p style="font-size:17px;color:#54565E;margin-top:12px;">Each day arrives with its city and live weather, ready for the plan and the places you add.</p>
+      <h2 style="font-size:39px;line-height:1.08;letter-spacing:-.03em;">See the trip take shape</h2>
+      <p style="font-size:17px;color:#54565E;margin-top:12px;">Add your cities and dates, and Voyage turns them into a day-by-day itinerary you can actually use while you travel.</p>
     </div>
     <div class="showcase-grid reveal d1" style="display:grid;grid-template-columns:248px 1fr;background:#fff;border:1px solid #E6EBF3;border-radius:22px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04),0 28px 56px -34px rgba(16,24,40,.24);">
       <div class="showcase-rail" id="trip-rail" style="border-right:1px solid #EDF1F7;padding:14px 0;"></div>
@@ -266,8 +270,8 @@ img{display:block;max-width:100%;}
   </div>
   <div class="wrap" style="position:relative;">
     <div class="band-copy reveal" style="max-width:560px;padding:104px 0;color:#fff;">
-      <h2 style="font-size:42px;line-height:1.06;font-weight:700;letter-spacing:-.03em;">From neon cities to quiet mornings.</h2>
-      <p style="font-size:18px;color:rgba(255,255,255,.86);margin-top:14px;max-width:44ch;">Weekend in Lisbon or a month across Japan, Voyage shapes itself around wherever you are going, and whoever you are going with.</p>
+      <h2 style="font-size:42px;line-height:1.06;letter-spacing:-.03em;">From first plans to favourite memories.</h2>
+      <p style="font-size:18px;color:rgba(255,255,255,.86);margin-top:14px;max-width:46ch;">A long weekend in Lisbon, two weeks in Japan, or a once-in-a-lifetime trip across Europe. Voyage gives every kind of trip a simple structure, without taking the feeling out of it.</p>
       <a href="./app/" class="btn" style="margin-top:26px;font-size:15px;padding:14px 24px;color:#15161A;background:#fff;box-shadow:0 16px 34px -16px rgba(0,0,0,.5);">
         Start planning
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
@@ -311,45 +315,51 @@ img{display:block;max-width:100%;}
 <!-- ===== features ===== -->
 <div id="features" style="max-width:760px;margin:0 auto;padding:84px 28px;">
   <div class="reveal">
-    <h2 style="font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.03em;">One quiet companion, the whole journey</h2>
-    <p style="font-size:17px;color:#54565E;margin-top:12px;margin-bottom:14px;">Set it up once and Voyage carries you from planning to the trip itself, and into the memories after.</p>
+    <h2 style="font-size:34px;line-height:1.1;letter-spacing:-.03em;">Plan the trip. Use it while you are there. Remember it after.</h2>
+    <p style="font-size:17px;color:#54565E;margin-top:12px;margin-bottom:14px;">Voyage is for people who like being organised, but still want travel to feel personal.</p>
   </div>
 
   <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
     </div>
-    <div><div style="font-size:18px;font-weight:700;">Guided setup</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Name the trip, add who is coming, and drop in each city with its dates. Voyage builds the day by day itinerary for you.</div></div>
+    <div><div style="font-size:18px;font-weight:700;">Set up the trip once</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Name the trip, add who is coming, then enter each city and date. Voyage builds the itinerary around your actual route.</div></div>
   </div>
   <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </div>
-    <div><div style="font-size:18px;font-weight:700;">Plan it together</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Invite whoever you are travelling with. Everyone adds places, keeps the plan and logs the journal in one shared trip.</div></div>
+    <div><div style="font-size:18px;font-weight:700;">Plan it together</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Invite the people you are travelling with, so everyone can add places, check the plan and keep the trip up to date.</div></div>
   </div>
   <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17a4 4 0 0 0 0-8 5 5 0 0 0-9.6-1.3A3.5 3.5 0 0 0 6 17Z"/><path d="M11 4.5 12 3"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </div>
-    <div><div style="font-size:18px;font-weight:700;">Live context, on the ground</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Real weather for every stop, a home clock for the time difference, and the whole day opened in maps in walking order.</div></div>
+    <div><div style="font-size:18px;font-weight:700;">Know what is happening today</div><div style="font-size:15px;color:#54565E;margin-top:4px;">See the day ahead, live weather, time zones and your saved plans without digging through notes, screenshots and group chats.</div></div>
+  </div>
+  <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
+    <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    </div>
+    <div><div style="font-size:18px;font-weight:700;">Open the day in maps</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Turn the places you have saved into a route you can use when you are already out exploring.</div></div>
+  </div>
+  <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
+    <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+    </div>
+    <div><div style="font-size:18px;font-weight:700;">Save places before you forget</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Drop in restaurants, bars, shops, galleries, beaches, hikes or anything else you want to remember for later.</div></div>
   </div>
   <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h6a3 3 0 0 1 3 3v13a2.4 2.4 0 0 0-2.4-2.4H3Z"/><path d="M21 4.5h-6a3 3 0 0 0-3 3v13a2.4 2.4 0 0 1 2.4-2.4H21Z"/></svg>
     </div>
-    <div><div style="font-size:18px;font-weight:700;">Shared journal</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Log meals, wines and moments with a photo and a rating per traveller. Quick to save before you forget.</div></div>
-  </div>
-  <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;align-items:flex-start;">
-    <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
-    </div>
-    <div><div style="font-size:18px;font-weight:700;">A recap worth keeping</div><div style="font-size:15px;color:#54565E;margin-top:4px;">When the trip ends, Voyage gathers your best meals, photos and moments into a recap you can share as a link or print to keep.</div></div>
+    <div><div style="font-size:18px;font-weight:700;">Keep a shared journal</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Log the meals, wines, photos and moments that made the trip. Quick enough to use while you are still travelling.</div></div>
   </div>
   <div class="reveal" style="display:flex;gap:20px;padding:24px 0;border-top:1px solid #EDF1F7;border-bottom:1px solid #EDF1F7;align-items:flex-start;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(65,89,156,.10);color:#41599C;display:flex;align-items:center;justify-content:center;flex:none;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
     </div>
-    <div><div style="font-size:18px;font-weight:700;">Yours, on every device</div><div style="font-size:15px;color:#54565E;margin-top:4px;">Your trip follows you from phone to laptop, tied to your account. Bookings and logistics stay quietly yours.</div></div>
+    <div><div style="font-size:18px;font-weight:700;">Build a recap worth keeping</div><div style="font-size:15px;color:#54565E;margin-top:4px;">When the trip ends, Voyage turns what you saved into a record of where you went, what you loved and what mattered.</div></div>
   </div>
 </div>
 
@@ -357,8 +367,8 @@ img{display:block;max-width:100%;}
 <div id="journal" style="background:#F6F9FE;border-top:1px solid #EDF1F7;">
   <div class="wrap" style="padding:80px 28px;">
     <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto 36px;">
-      <h2 style="font-size:32px;font-weight:700;letter-spacing:-.02em;">A diary that builds itself, day by day</h2>
-      <p style="font-size:16px;color:#54565E;margin-top:11px;">Every meal, wine and moment you save becomes a quiet record of the trip.</p>
+      <h2 style="font-size:32px;letter-spacing:-.02em;">A travel diary you will actually keep</h2>
+      <p style="font-size:16px;color:#54565E;margin-top:11px;">Most trips end with a camera roll, a few notes and half-remembered restaurant names. Voyage helps you save the good bits as they happen, with just enough detail to make them useful later.</p>
     </div>
     <div class="journal-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:860px;margin:0 auto;">
       <div class="imgwrap zoom lift" style="aspect-ratio:1;border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 18px 36px -28px rgba(16,24,40,.3);">
@@ -386,8 +396,8 @@ img{display:block;max-width:100%;}
     <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.10);top:-150px;right:-90px;"></div>
     <div style="position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.07);bottom:-150px;left:-60px;"></div>
     <div style="position:relative;">
-      <h2 style="font-size:36px;font-weight:700;letter-spacing:-.03em;">Your next trip starts here.</h2>
-      <p style="font-size:17px;opacity:.92;margin:12px auto 26px;max-width:46ch;">Free to use. Works on your phone and laptop. Set up your first trip in under a minute.</p>
+      <h2 style="font-size:36px;letter-spacing:-.03em;">Your next trip deserves better than scattered notes.</h2>
+      <p style="font-size:17px;opacity:.92;margin:12px auto 26px;max-width:50ch;">Keep the plans, places and memories together from the start. Free to use. Works on phone and laptop. Set up your first trip in under a minute.</p>
       <a href="./app/" class="btn" style="font-size:15px;padding:15px 28px;color:#41599C;background:#fff;box-shadow:0 16px 30px -14px rgba(0,0,0,.4);">
         Open Voyage
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
@@ -410,7 +420,7 @@ img{display:block;max-width:100%;}
       <a class="lk" href="./legal/terms.html" style="text-decoration:none;color:inherit;">Terms</a>
       <a class="lk" href="./legal/support.html" style="text-decoration:none;color:inherit;">Support</a>
     </div>
-    <div style="font-size:13px;color:#8A8D96;">Plan any trip, anywhere.</div>
+    <div style="font-size:13px;color:#8A8D96;">For travellers who care about every day of the trip.</div>
   </div>
 </div>
 
