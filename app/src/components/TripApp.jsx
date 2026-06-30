@@ -8,6 +8,8 @@ import {
 buildItinerary, todayIndexFor, tripCitiesOf, uid, db, useSetStatus, useLiveWeather,
 mergedPlaces, mapDayUrl, fmtDate, tzChip, tzFull,
 } from "../lib/helpers.js";
+import { queueLength, enqueue, flushQueue, isNetworkish } from "../lib/sync.js";
+import { supabase } from "../lib/supabase.js";
 import { WeatherGlyph, HomeClock, Card, QuickAdd, Stat } from "./ui.jsx";
 import { Journal } from "./Journal.jsx";
 import { Explore } from "./Explore.jsx";
@@ -25,12 +27,14 @@ const [stale, setStale] = useState(false);
 const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
 const [toast, setToast] = useState("");
 const [sync, setSync] = useState({ state: "idle", message: "Synced" });
+const [pending, setPending] = useState(typeof localStorage === "undefined" ? 0 : queueLength());
 const [members, setMembers] = useState({ enabled: null, list: [] });
 const [sharing, setSharing] = useState(false);
 const [capturing, setCapturing] = useState(false);
 const PREFS_KEY = `wl:prefs:${trip.id}`;
 const [state, setState] = useState({ weather: {}, planDone: {}, planAdd: {}, journal: [], exploreStatus: {}, exploreAdded: [], privateNotes: [] });
 const localPrefs = useRef({ weather: {}, planDone: {}, planAdd: {} });
+const isFetching = useRef(false);
 
 useEffect(() => {
 try { const v = localStorage.getItem(PREFS_KEY); if (v) { const p = JSON.parse(v); localPrefs.current = p; setState(s => ({ ...s, ...p })); } } catch (e) {}
@@ -43,21 +47,33 @@ try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
 const setLocal = (updater) => setState(s => { const next = typeof updater === "function" ? updater(s) : { ...s, ...updater }; persistPrefs(next); return next; });
 
 useEffect(() => {
-const onUp = () => setOnline(true); const onDown = () => setOnline(false);
+const onUp = () => { setOnline(true); flushQueue(setPending); };
+const onDown = () => setOnline(false);
 window.addEventListener("online", onUp); window.addEventListener("offline", onDown);
 return () => { window.removeEventListener("online", onUp); window.removeEventListener("offline", onDown); };
 }, []);
+// Drain anything left queued from a previous (offline) session on load.
+useEffect(() => { if (queueLength()) flushQueue(setPending); }, []);
 
 const localToast = (m) => { setToast(m); setTimeout(() => setToast(""), 1800); };
-const runSave = async (label, op) => {
-if (!online) { setSync({ state: "queued", message: "Offline, retry when connected" }); throw new Error("offline"); }
+// runSave(label, op[, queueOp]). When a serialisable queueOp { kind, tripId?, args }
+// is supplied, the write becomes offline-first: offline or a network failure enqueues
+// it (keeping the optimistic UI) instead of throwing; a logical error still throws so
+// the caller can revert. Writes without a queueOp keep the old online-only behaviour.
+const runSave = async (label, op, queueOp) => {
+if (!online) {
+if (queueOp) { enqueue(queueOp); setPending(queueLength()); setSync({ state: "queued", message: "Saved offline, will sync" }); return { queued: true }; }
+setSync({ state: "queued", message: "Offline, retry when connected" }); throw new Error("offline");
+}
 setSync({ state: "saving", message: label || "Saving..." });
 try {
 const result = await op();
+flushQueue(setPending);
 setSync({ state: "synced", message: "Saved" });
 setTimeout(() => setSync(s => s.state === "synced" ? { state: "idle", message: "Synced" } : s), 1600);
 return result;
 } catch (e) {
+if (queueOp && isNetworkish(e)) { enqueue(queueOp); setPending(queueLength()); setSync({ state: "queued", message: "Saved offline, will sync" }); return { queued: true }; }
 setSync({ state: "error", message: "Sync failed, tap retry" });
 throw e;
 }
@@ -68,17 +84,30 @@ setMembers({ enabled: r.enabled, list: r.members || [] });
 return r;
 };
 const refresh = async () => {
+if (isFetching.current) return; // guard against overlapping refetches (realtime can fire in bursts)
+isFetching.current = true;
 try {
 const [data] = await Promise.all([db.loadTripData(trip.id), refreshMembers()]);
 setState(s => ({ ...s, ...localPrefs.current, ...data }));
-setStale(false); setLoaded(true); setSync({ state: "idle", message: "Synced" });
+setStale(false); setLoaded(true); setSync(s => (s.state === "queued" ? s : { state: "idle", message: "Synced" }));
 } catch (e) { setStale(true); setLoaded(true); }
+finally { isFetching.current = false; }
 };
 useEffect(() => { refresh(); }, [trip.id]);
 useEffect(() => {
 const onVis = () => { if (document.visibilityState === "visible") refresh(); };
 document.addEventListener("visibilitychange", onVis);
 return () => document.removeEventListener("visibilitychange", onVis);
+}, [trip.id]);
+// Live sync: refetch (debounced) when any collaborator changes this trip's shared rows.
+useEffect(() => {
+const tables = ["wl_places", "wl_place_status", "wl_journal_entries", "wl_journal_photos", "wl_private_notes", "wl_inbox", "wl_trip_members"];
+let timer = null;
+const bump = () => { clearTimeout(timer); timer = setTimeout(() => refresh(), 300); };
+const ch = supabase.channel("trip:" + trip.id);
+tables.forEach(t => ch.on("postgres_changes", { event: "*", schema: "public", table: t, filter: `trip_id=eq.${trip.id}` }, bump));
+ch.subscribe();
+return () => { clearTimeout(timer); supabase.removeChannel(ch); };
 }, [trip.id]);
 
 const copy = (txt, label) => {
@@ -112,7 +141,11 @@ return (
 </div>
 <div className="progress"><div className="progress-fill" style={{ width: `${((tIndex + 1) / total) * 100}%` }} /></div>
 <div className="syncrow">
-<span className={"syncnote" + (!online || sync.state === "error" || sync.state === "queued" ? " warn" : "")}>{!online ? "offline - edits stay local until reconnected" : `${sync.message}${members.enabled === false ? " - collaboration setup needed" : ""}`}</span>
+<span className={"syncnote" + (!online || pending > 0 || sync.state === "error" || sync.state === "queued" ? " warn" : "")}>{
+!online ? (pending > 0 ? `Offline · ${pending} change${pending === 1 ? "" : "s"} pending` : "Offline · edits saved on this device")
+: pending > 0 ? `Syncing ${pending} change${pending === 1 ? "" : "s"}…`
+: `${sync.message}${members.enabled === false ? " - collaboration setup needed" : ""}`
+}</span>
 {sync.state === "error" && <button className="syncbtn" onClick={refresh}><RefreshCw size={11} /> Retry</button>}
 </div>
 {stale && <button className="stalebanner" onClick={refresh}>Couldn't load the latest trip data — tap to retry.</button>}
@@ -161,14 +194,14 @@ const groups = PRIVATE_TYPE_ORDER.map(t => ({ type: t, items: notes.filter(n => 
 const del = async (id) => {
 const prev = state.privateNotes;
 setState(s => ({ ...s, privateNotes: (s.privateNotes || []).filter(n => n.id !== id) }));
-try { await runSave("Removing note...", () => db.deletePrivateNote(id)); flash("Note removed"); }
+try { await runSave("Removing note...", () => db.deletePrivateNote(id), { kind: "deletePrivateNote", args: { id } }); flash("Note removed"); }
 catch (e) { flash("Delete failed"); setState(s => ({ ...s, privateNotes: prev })); }
 };
 const addNote = async (note) => {
 const entry = { id: uid(), day: dayIndex, type: note.type, title: note.title, body: note.body, ref: note.ref, url: "", sort_order: 0 };
 setState(s => ({ ...s, privateNotes: [...(s.privateNotes || []), entry] }));
 setAdding(false);
-try { await runSave("Saving note...", () => db.addPrivateNote(trip.id, entry)); flash("Note added"); }
+try { await runSave("Saving note...", () => db.addPrivateNote(trip.id, entry), { kind: "addPrivateNote", tripId: trip.id, args: { note: entry } }); flash("Note added"); }
 catch (e) { flash("Could not save note"); }
 };
 

@@ -27,7 +27,7 @@ if (!title.trim()) return;
 setBusy(true);
 const entry = { id: uid(), type, title: title.trim(), note: note.trim(), ratings: { ...ratings }, region: region.trim(), vintage: vintage.trim(), city: d.city, day: tIndex, ts: Date.now(), place_id: null, photos: [] };
 try {
-await runSave("Saving journal entry...", () => db.addJournal(trip.id, entry));
+await runSave("Saving journal entry...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
 const uploaded = [];
 for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } }
 files.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });
@@ -42,7 +42,7 @@ const del = async (id) => {
 if (!window.confirm("Delete this entry? Its photos will be removed too.")) return;
 const prev = state.journal;
 setState(s => ({ ...s, journal: s.journal.filter(j => j.id !== id) }));
-try { await runSave("Deleting journal entry...", () => db.deleteJournal(id)); } catch (e) { flash("Delete failed"); setState(s => ({ ...s, journal: prev })); }
+try { await runSave("Deleting journal entry...", () => db.deleteJournal(id), { kind: "deleteJournal", args: { id } }); } catch (e) { flash("Delete failed"); setState(s => ({ ...s, journal: prev })); }
 };
 const rated = state.journal.filter(j => Object.values(j.ratings || {}).some(v => v > 0));
 const avg = (name) => {
@@ -166,7 +166,7 @@ if (!title.trim()) return;
 setBusy(true);
 const patch = { id: entry.id, type, title: title.trim(), note: note.trim(), ratings: { ...ratings }, region: region.trim(), vintage: vintage.trim(), city: city.trim() };
 try {
-await runSave("Updating journal entry...", () => db.updateJournal(patch));
+await runSave("Updating journal entry...", () => db.updateJournal(patch), { kind: "updateJournal", args: { entry: patch } });
 const uploaded = [];
 for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } }
 files.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });

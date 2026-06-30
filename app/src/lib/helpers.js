@@ -256,7 +256,8 @@ return "Meal";
 export function useSetStatus(ctx) {
 return (id, patch) => {
 ctx.setState(s => ({ ...s, exploreStatus: { ...s.exploreStatus, [id]: { ...(s.exploreStatus[id] || {}), ...patch } } }));
-ctx.runSave("Saving place status...", () => ctx.db.upsertStatus(ctx.trip.id, id, patch)).catch(() => ctx.flash("Sync failed - retry"));
+ctx.runSave("Saving place status...", () => ctx.db.upsertStatus(ctx.trip.id, id, patch),
+{ kind: "upsertStatus", tripId: ctx.trip.id, args: { placeId: id, patch } }).catch(() => ctx.flash("Sync failed - retry"));
 };
 }
 
@@ -384,20 +385,23 @@ const privateNotes = (privRes.data || []).map(r => ({ id: r.id, day: r.day, type
 return { exploreAdded, exploreStatus, journal, privateNotes };
 },
 async addPlace(tripId, p) {
-await supabase.from("wl_places").insert({ id: p.id, trip_id: tripId, city: p.city, cat: p.cat, tag: p.tag, name: p.name, area: p.area || null, note: p.note || null });
+const { error } = await supabase.from("wl_places").insert({ id: p.id, trip_id: tripId, city: p.city, cat: p.cat, tag: p.tag, name: p.name, area: p.area || null, note: p.note || null });
+if (error) throw error;
 },
 async upsertStatus(tripId, placeId, patch) {
 const row = { trip_id: tripId, place_id: placeId, updated_at: new Date().toISOString() };
 if ("plannedDay" in patch) row.planned_day = patch.plannedDay;
 if ("been" in patch) row.been = patch.been;
 if ("rated" in patch) row.rated = patch.rated;
-await supabase.from("wl_place_status").upsert(row, { onConflict: "trip_id,place_id" });
+const { error } = await supabase.from("wl_place_status").upsert(row, { onConflict: "trip_id,place_id" });
+if (error) throw error;
 },
 async addJournal(tripId, j) {
-await supabase.from("wl_journal_entries").insert({
+const { error } = await supabase.from("wl_journal_entries").insert({
 id: j.id, trip_id: tripId, type: j.type, title: j.title, note: j.note || null, ratings: j.ratings || {},
 region: j.region || null, vintage: j.vintage || null, city: j.city || null, day: j.day, ts: j.ts, place_id: j.place_id || null,
 });
+if (error) throw error;
 },
 async updateJournal(j) {
 const { error } = await supabase.from("wl_journal_entries").update({
@@ -410,7 +414,8 @@ async deleteJournal(id) {
 const { data } = await supabase.from("wl_journal_photos").select("path").eq("journal_id", id);
 const paths = (data || []).map(r => r.path).filter(Boolean);
 if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
-await supabase.from("wl_journal_entries").delete().eq("id", id);
+const { error } = await supabase.from("wl_journal_entries").delete().eq("id", id);
+if (error) throw error;
 },
 async uploadPhoto(tripId, journalId, file, userId) {
 const blob = await compressImage(file);
@@ -421,17 +426,21 @@ const up = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, { cacheC
 if (up.error) throw up.error;
 const url = photoPublicUrl(path);
 const id = uid();
-await supabase.from("wl_journal_photos").insert({ id, trip_id: tripId, journal_id: journalId, path, url, caption: file.name || null });
+const ins = await supabase.from("wl_journal_photos").insert({ id, trip_id: tripId, journal_id: journalId, path, url, caption: file.name || null });
+if (ins.error) throw ins.error;
 return { id, src: url, path, name: file.name || "" };
 },
 async deletePhoto(photo) {
 if (photo.path) await supabase.storage.from(PHOTO_BUCKET).remove([photo.path]);
-await supabase.from("wl_journal_photos").delete().eq("id", photo.id);
+const { error } = await supabase.from("wl_journal_photos").delete().eq("id", photo.id);
+if (error) throw error;
 },
 async addPrivateNote(tripId, n) {
-await supabase.from("wl_private_notes").insert({ id: n.id, trip_id: tripId, day: n.day, type: n.type, title: n.title, body: n.body || null, ref: n.ref || null, url: n.url || null, sort_order: n.sort_order || 0 });
+const { error } = await supabase.from("wl_private_notes").insert({ id: n.id, trip_id: tripId, day: n.day, type: n.type, title: n.title, body: n.body || null, ref: n.ref || null, url: n.url || null, sort_order: n.sort_order || 0 });
+if (error) throw error;
 },
 async deletePrivateNote(id) {
-await supabase.from("wl_private_notes").delete().eq("id", id);
+const { error } = await supabase.from("wl_private_notes").delete().eq("id", id);
+if (error) throw error;
 },
 };

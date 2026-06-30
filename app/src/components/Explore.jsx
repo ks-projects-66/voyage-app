@@ -25,7 +25,8 @@ const byCat = CATS.map(cat => ({ cat, items: shown.filter(p => p.cat === cat) })
 const addPlace = async (place) => {
 setState(s => ({ ...s, exploreAdded: [...(s.exploreAdded || []), place] }));
 setAdding(false);
-try { await runSave("Saving place...", () => db.addPlace(trip.id, place)); } catch (e) { flash("Could not save place"); }
+try { await runSave("Saving place...", () => db.addPlace(trip.id, place), { kind: "addPlace", tripId: trip.id, args: { place } }); }
+catch (e) { flash("Could not save place"); setState(s => ({ ...s, exploreAdded: (s.exploreAdded || []).filter(p => p.id !== place.id) })); }
 };
 
 if (!cityList.length) return <div className="page"><div className="page-h">Explore</div><div className="muted sm empty pad">Add destinations to your trip to start collecting places.</div></div>;
@@ -108,7 +109,7 @@ setBusy(true);
 const day = place.plannedDay != null ? place.plannedDay : tIndex;
 const entry = { id: uid(), type: typeForPlace(place), title: place.name, note: note.trim(), ratings: { ...ratings }, region: "", vintage: "", city: place.city, day, ts: Date.now(), place_id: place.id, photos: [] };
 try {
-await runSave("Saving memory...", () => db.addJournal(trip.id, entry));
+await runSave("Saving memory...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
 const uploaded = [];
 for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } }
 files.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });
