@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Check, CalendarDays, CalendarPlus, Plus } from "lucide-react";
+import { Check, CalendarDays, CalendarPlus, Plus, Sparkles, X } from "lucide-react";
 import { CATS, VIBES } from "../lib/constants.js";
 import { useSetStatus, mergedPlaces, fmtDate, uid, typeForPlace, questionFor } from "../lib/helpers.js";
+import { aiCapture, AUTOADD_MIN, placeKey, findDup } from "../lib/ai.js";
 import { Card, RateRow, PhotoPicker } from "./ui.jsx";
 
 export function Explore(ctx) {
@@ -14,6 +15,11 @@ const [city, setCity] = useState(startCity);
 const [vibe, setVibe] = useState("All");
 const [picker, setPicker] = useState(null);
 const [adding, setAdding] = useState(false);
+const [capturing, setCapturing] = useState(false);
+const [capText, setCapText] = useState("");
+const [capFiles, setCapFiles] = useState([]);
+const [capBusy, setCapBusy] = useState(false);
+const [review, setReview] = useState(null); // low-confidence drafts awaiting review
 
 const places = mergedPlaces(state).filter(p => p.city === city);
 const vibesHere = ["All", ...Array.from(new Set(places.map(p => p.tag)))];
@@ -22,11 +28,47 @@ const doneCount = places.filter(p => p.been).length;
 const cityDays = days.map((d, i) => ({ i, d })).filter(x => x.d.city === city);
 const byCat = CATS.map(cat => ({ cat, items: shown.filter(p => p.cat === cat) })).filter(g => g.items.length);
 
-const addPlace = async (place) => {
+// Optimistically add a place and persist it (offline-first via the queue descriptor).
+const persistPlace = (place) => {
 setState(s => ({ ...s, exploreAdded: [...(s.exploreAdded || []), place] }));
-setAdding(false);
-try { await runSave("Saving place...", () => db.addPlace(trip.id, place), { kind: "addPlace", tripId: trip.id, args: { place } }); }
-catch (e) { flash("Could not save place"); setState(s => ({ ...s, exploreAdded: (s.exploreAdded || []).filter(p => p.id !== place.id) })); }
+runSave("Saving place...", () => db.addPlace(trip.id, place), { kind: "addPlace", tripId: trip.id, args: { place } })
+.catch(() => { flash("Could not save place"); setState(s => ({ ...s, exploreAdded: (s.exploreAdded || []).filter(p => p.id !== place.id) })); });
+};
+const addPlace = (place) => { setAdding(false); persistPlace(place); };
+
+// Normalise an AI draft into a place row, defaulting blanks to the current city/cat/tag.
+const normaliseDraft = (d) => ({
+id: uid(), name: (d.name || "").trim(),
+city: d.city || city, cat: CATS.includes(d.cat) ? d.cat : "Eat & Drink",
+tag: VIBES.includes(d.tag) ? d.tag : VIBES[0], area: d.area || "", note: d.note || "",
+confidence: typeof d.confidence === "number" ? d.confidence : 0.6,
+});
+
+// AI capture: a note / link / photo(s) -> place drafts. Confident ones are added
+// straight away; the rest go to a review sheet. Duplicates are dropped.
+const runCapture = async () => {
+if (!capText.trim() && !capFiles.length) return;
+setCapBusy(true);
+try {
+const raw = await aiCapture({ input: capText.trim(), files: capFiles, cities: tripCities, cats: CATS, tags: VIBES });
+const existing = mergedPlaces(state);
+const seen = new Set();
+const drafts = raw.map(normaliseDraft).filter(d => {
+if (!d.name) return false;
+const k = placeKey(d.name, d.city);
+if (seen.has(k) || findDup(existing, d.name, d.city)) return false;
+seen.add(k); return true;
+});
+capFiles.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });
+setCapText(""); setCapFiles([]); setCapturing(false);
+if (!drafts.length) { flash("Nothing new found"); return; }
+const confident = drafts.filter(d => d.confidence >= AUTOADD_MIN);
+const rest = drafts.filter(d => d.confidence < AUTOADD_MIN);
+confident.forEach(persistPlace);
+if (confident.length) flash(`Added ${confident.length} place${confident.length > 1 ? "s" : ""}`);
+if (rest.length) setReview(rest);
+} catch (e) { flash(e.message || "Could not read that"); }
+setCapBusy(false);
 };
 
 if (!cityList.length) return <div className="page"><div className="page-h">Explore</div><div className="muted sm empty pad">Add destinations to your trip to start collecting places.</div></div>;
@@ -73,9 +115,44 @@ return (
 </div>
 </div>
 ))}
-{adding ? <AddPlace city={city} onCancel={() => setAdding(false)} onAdd={addPlace} />
-: <button className="addplace" onClick={() => setAdding(true)}><Plus size={16} /> Add a place</button>}
+{capturing && (
+<Card>
+<div style={{ fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px", marginBottom: "8px" }}><Sparkles size={15} /> Capture a place</div>
+<input className="inline-input full" placeholder="Paste a link, or type a place or a few names…" value={capText} onChange={e => setCapText(e.target.value)} />
+<PhotoPicker files={capFiles} setFiles={setCapFiles} flash={flash} />
+<div className="muted xs">Paste a link, snap a menu or sign, or jot a name — Voyage fills in the details. Confident finds are added; the rest you confirm.</div>
+<div className="btnrow"><button className="primary grow" onClick={runCapture} disabled={capBusy}><Sparkles size={15} /> {capBusy ? "Reading…" : "Find places"}</button><button className="ghostbtn" onClick={() => { setCapturing(false); setCapText(""); setCapFiles([]); }}>Cancel</button></div>
+</Card>
+)}
+{review && <MultiReview drafts={review} city={city} onClose={() => setReview(null)} onAdd={(picked) => { picked.forEach(persistPlace); setReview(null); flash(`Added ${picked.length} place${picked.length === 1 ? "" : "s"}`); }} />}
+{adding && <AddPlace city={city} onCancel={() => setAdding(false)} onAdd={addPlace} />}
+{!capturing && !adding && !review && (
+<div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+<button className="addplace" onClick={() => setCapturing(true)}><Sparkles size={16} /> Capture with AI</button>
+<button className="addplace" onClick={() => setAdding(true)}><Plus size={16} /> Add a place</button>
 </div>
+)}
+</div>
+);
+}
+
+function MultiReview({ drafts, city, onAdd, onClose }) {
+const [picked, setPicked] = useState(() => new Set(drafts.map(d => d.id)));
+const toggle = (id) => setPicked(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+return (
+<Card>
+<div style={{ fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px", marginBottom: "4px" }}><Sparkles size={15} /> {drafts.length} found — add which?</div>
+{drafts.map(d => (
+<button key={d.id} onClick={() => toggle(d.id)} style={{ display: "flex", gap: "10px", alignItems: "flex-start", width: "100%", textAlign: "left", padding: "11px 0", background: "none", border: "none", borderTop: "1px solid #EDF1F7", cursor: "pointer" }}>
+<span className="box" style={{ marginTop: "1px" }}>{picked.has(d.id) && <Check size={13} strokeWidth={3} />}</span>
+<span>
+<span className="place-name">{d.name}</span>
+<span className="muted xs" style={{ display: "block" }}>{[d.city || city, d.tag].filter(Boolean).join(" · ")}{d.confidence < AUTOADD_MIN ? " · check this one" : ""}</span>
+</span>
+</button>
+))}
+<div className="btnrow"><button className="primary grow" onClick={() => onAdd(drafts.filter(d => picked.has(d.id)))} disabled={!picked.size}><Plus size={15} /> Add {picked.size} place{picked.size === 1 ? "" : "s"}</button><button className="ghostbtn" onClick={onClose}>Cancel</button></div>
+</Card>
 );
 }
 

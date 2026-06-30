@@ -1,13 +1,18 @@
-// Le Grand Tour "assistant" Edge Function (Gemini-backed).
+// Voyage "assistant" Edge Function (Gemini-backed).
 // Source of record for the deployed function (project bsbuhkzdebqobkpxtivb).
 //
-// Two modes, both requiring a signed-in trip user (the Gemini key stays server side):
-//   • place  — turn a raw note OR a pasted link into one structured place. Links are
-//              read via Gemini's url_context tool; falls back to a schema-only call.
-//   • story  — write a short, grounded trip recap from the supplied journal entries.
+// Generalised for ANY trip: the client passes the trip's own cities and the
+// Explore taxonomy (cats/tags); nothing here is hard-coded to a particular trip.
 //
-// Notes: gemini-2.5-flash is a thinking model, so thinking is disabled (thinkingBudget 0)
-// to keep latency/cost down and leave the output budget for the actual response.
+// Three modes, all requiring a signed-in trip user (the Gemini key stays server side):
+//   • place  — turn a raw note, a pasted link, OR photo(s) into one or more structured
+//              places. Links are read via Gemini's url_context tool; photos via inline_data.
+//   • story  — write a short, grounded trip recap from the supplied journal entries.
+//   • doc    — read a PDF/photo of a ticket, booking or itinerary (inline_data) and
+//              extract its logistics into structured items.
+//
+// gemini-2.5-flash is a thinking model, so thinking is disabled (thinkingBudget 0) to
+// keep latency/cost down and leave the output budget for the actual response.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -16,24 +21,66 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const CATS = ["Eat & Drink", "See & Do", "Shop"];
-const TAGS = ["Fancy dinner", "Long lunch", "Quick bite", "Coffee & cake", "Wine bar", "Cheap & cheerful", "Sweet treat", "Must-see", "Hidden gem", "Golden hour", "Browse & buy"];
-const CITIES = ["Paris", "Bordeaux", "Copenhagen", "London"];
 const MODEL = "gemini-2.5-flash";
+
+// Sensible defaults matching Voyage's Explore taxonomy (app/src/lib/constants.js).
+// The client should send its own `cats`/`tags`; these are only a fallback.
+const DEFAULT_CATS = ["Eat & Drink", "See & Do", "Shop"];
+const DEFAULT_TAGS = ["Fancy dinner", "Long lunch", "Quick bite", "Coffee & cake", "Wine bar", "Cheap & cheerful", "Sweet treat", "Must-see", "Hidden gem", "Golden hour", "Browse & buy"];
+// Logistics types the client understands (PRIVATE_TYPE_ORDER).
+const PRIV_TYPES = ["hotel", "flight", "train", "ticket", "reminder", "note"];
 
 function json(o: unknown, status = 200) {
   return new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
-const SYS_PLACE = `You convert a traveller's raw note or pasted link into ONE structured place for a trip app covering Paris, Bordeaux, Copenhagen, London. Rules: choose category strictly from the allowed list; choose tag strictly from the allowed list; set city only if clearly implied, else leave empty; if the input is a URL, use the linked page's actual content to fill the fields; NEVER invent facts (hours, prices, founding dates, ratings, claims) that are not present in the input or the linked page; the note field should only restate what the source actually says, concise, Australian English, no em dashes; if a field is unknown leave it empty. Respond with a single JSON object only, no markdown.`;
+function sysPlace(cats: string[], tags: string[], cities: string[]) {
+  const cityRule = cities.length
+    ? `set city only if it clearly matches one of the trip's cities (${cities.join(", ")}), otherwise leave it empty`
+    : `set city only if the input clearly names a city, otherwise leave it empty`;
+  return `You convert a traveller's raw note, a pasted link, or a photo into structured places for a trip planner. The input may describe ONE place or MANY (a list, an article, a screenshot of several places) — return every distinct place you find. Rules: choose category strictly from the allowed list; choose tag strictly from the allowed list; ${cityRule}; if the input is a URL, use the linked page's actual content to fill the fields; if the input is an image, read the place name and any visible details from it; NEVER invent facts (hours, prices, founding dates, ratings, claims) that are not present in the input, the linked page, or the image; the note field should only restate what the source actually says, concise, Australian English, no em dashes; if a field is unknown leave it empty; set confidence from 0 to 1 for how certain the structured fields are. Respond with a single JSON object only, shaped {"items":[ ... ]}, no markdown.`;
+}
 
-const SYS_STORY = `You write a short, warm recap of a couple's trip for their travel app. Australian English, second person plural ("you"). 2 to 3 short sentences, about 60 words, one paragraph. Base it ONLY on the supplied journal entries. Keep each place in the exact city it is listed under; do NOT move places between cities, and do NOT add landmarks, quotes, dishes or facts that are not in the entries. Warm and personal but grounded and accurate. No em dashes, no quotation marks, no lists, no headings.`;
+const SYS_STORY = `You write a short, warm recap of a trip for a travel app. Australian English, second person plural ("you"). 2 to 3 short sentences, about 60 words, one paragraph. Base it ONLY on the supplied journal entries. Keep each place in the exact city it is listed under; do NOT move places between cities, and do NOT add landmarks, quotes, dishes or facts that are not in the entries. Warm and personal but grounded and accurate. No em dashes, no quotation marks, no lists, no headings.`;
 
-const PLACE_SCHEMA = {
+const SYS_DOC = `You read a travel document supplied as a PDF or image (a ticket, boarding pass, booking confirmation, hotel reservation or itinerary) and extract its logistics into structured items for a trip app. Rules: extract ONLY what the document actually states; NEVER invent or guess times, dates, confirmation numbers, addresses, gates or prices that are not present; choose type strictly from the allowed list; title is a short human label such as "Flight to Copenhagen", "Hotel Sanders" or "Eurostar to London"; body holds the key details a traveller needs at a glance (date, times, terminal or platform, address, room) in a compact single block, Australian English, no em dashes; ref holds the single most useful reference (booking reference, PNR, confirmation or seat number) or empty; if the document holds several bookings return one item for each; if nothing travel-related is found return an empty items array. Respond with a single JSON object only, no markdown.`;
+
+const DOC_SCHEMA = {
   type: "object",
-  properties: { name: { type: "string" }, city: { type: "string" }, cat: { type: "string", enum: CATS }, tag: { type: "string", enum: TAGS }, area: { type: "string" }, note: { type: "string" } },
-  required: ["name", "cat", "tag"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: PRIV_TYPES },
+          title: { type: "string" },
+          body: { type: "string" },
+          ref: { type: "string" },
+        },
+        required: ["type", "title"],
+      },
+    },
+  },
+  required: ["items"],
 };
+
+function placesSchema(cats: string[], tags: string[]) {
+  return {
+    type: "object",
+    properties: {
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { name: { type: "string" }, city: { type: "string" }, cat: { type: "string", enum: cats }, tag: { type: "string", enum: tags }, area: { type: "string" }, note: { type: "string" }, confidence: { type: "number" } },
+          required: ["name", "cat", "tag"],
+        },
+      },
+    },
+    required: ["items"],
+  };
+}
 
 async function callGemini(key: string, payload: unknown) {
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`, {
@@ -81,15 +128,18 @@ Deno.serve(async (req: Request) => {
       const entries = Array.isArray(bodyIn?.entries) ? bodyIn.entries : [];
       if (!entries.length) return json({ error: "no entries" }, 400);
       const lines = entries.slice(0, 80).map((e: any) => {
-        const r = (e?.you || e?.her) ? ` (rated ${e?.you || 0} and ${e?.her || 0})` : "";
         const where = e?.city ? ` in ${e.city}` : "";
         const note = e?.note ? `: ${String(e.note).slice(0, 160)}` : "";
-        return `- ${e?.type || "Note"}: ${e?.title || ""}${where}${r}${note}`;
+        return `- ${e?.type || "Note"}: ${e?.title || ""}${where}${note}`;
       }).join("\n");
       const tripName = (bodyIn?.trip?.name || "the trip").toString();
+      // Route is derived from the cities present in the entries, in order of first appearance.
+      const seen: string[] = [];
+      for (const e of entries) { const c = (e?.city || "").trim(); if (c && !seen.includes(c)) seen.push(c); }
+      const route = seen.length ? `Route in order: ${seen.join(", ")}.\n\n` : "";
       const payload = {
         system_instruction: { parts: [{ text: SYS_STORY }] },
-        contents: [{ parts: [{ text: `Trip: ${tripName}. Route in order: Sydney, Paris, Bordeaux, Copenhagen, London.\n\nJournal entries (each shows its city):\n${lines}` }] }],
+        contents: [{ parts: [{ text: `Trip: ${tripName}. ${route}Journal entries (each shows its city):\n${lines}` }] }],
         generationConfig: { temperature: 0.4, maxOutputTokens: 500, thinkingConfig: { thinkingBudget: 0 } },
       };
       const g = await callGemini(K, payload);
@@ -98,40 +148,87 @@ Deno.serve(async (req: Request) => {
       return json({ text: txt });
     }
 
-    // ---- PLACE MODE: raw note or link -> one structured place ----
+    // ---- DOC MODE: a ticket/booking/itinerary file -> structured logistics ----
+    if (mode === "doc") {
+      const data = (bodyIn?.data || "").toString();
+      const mimeType = (bodyIn?.mimeType || "").toString();
+      if (!data || !mimeType) return json({ error: "no document" }, 400);
+      const payload = {
+        system_instruction: { parts: [{ text: SYS_DOC }] },
+        contents: [{ parts: [
+          { inline_data: { mime_type: mimeType, data } },
+          { text: "Extract every booking or logistics item from this document." },
+        ] }],
+        generationConfig: { responseMimeType: "application/json", responseSchema: DOC_SCHEMA, temperature: 0.1, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
+      };
+      const g = await callGemini(K, payload);
+      const txt = extractText(g);
+      if (!txt) return json({ error: "no result", detail: g?.error?.message || null }, 502);
+      let parsed: any;
+      try { parsed = parseLooseJson(txt); } catch { return json({ error: "unparseable model output" }, 502); }
+      const raw = Array.isArray(parsed?.items) ? parsed.items : [];
+      const items = raw.slice(0, 25).map((it: any) => ({
+        type: PRIV_TYPES.includes(it?.type) ? it.type : "note",
+        title: (it?.title || "").toString().slice(0, 120),
+        body: (it?.body || "").toString().slice(0, 600),
+        ref: (it?.ref || "").toString().slice(0, 80),
+      })).filter((it: any) => it.title);
+      return json({ items });
+    }
+
+    // ---- PLACE MODE: note / link / photo(s) -> one or more structured places ----
+    const cats = (Array.isArray(bodyIn?.cats) && bodyIn.cats.length) ? bodyIn.cats.map(String) : DEFAULT_CATS;
+    const tags = (Array.isArray(bodyIn?.tags) && bodyIn.tags.length) ? bodyIn.tags.map(String) : DEFAULT_TAGS;
+    const cities = Array.isArray(bodyIn?.cities) ? bodyIn.cities.map(String).filter(Boolean) : [];
     const input = (bodyIn?.input || "").toString().trim();
-    if (!input) return json({ error: "empty input" }, 400);
-    const isUrl = /^https?:\/\//i.test(input);
-    const contents = [{ parts: [{ text: `Allowed categories: ${CATS.join(", ")}. Allowed tags: ${TAGS.join(", ")}. Allowed cities: ${CITIES.join(", ")}.\n\nRaw input: ${input}` }] }];
+    const images = Array.isArray(bodyIn?.images) ? bodyIn.images : [];
+    if (!input && !images.length) return json({ error: "empty input" }, 400);
+    const isUrl = !images.length && /^https?:\/\//i.test(input);
+
+    const baseText = `Allowed categories: ${cats.join(", ")}. Allowed tags: ${tags.join(", ")}.`
+      + (cities.length ? ` Trip cities: ${cities.join(", ")}.` : "")
+      + (input ? `\n\nRaw input: ${input}` : `\n\nExtract the place(s) shown in the attached image(s).`);
+    const parts: any[] = [{ text: baseText }];
+    for (const im of images.slice(0, 4)) {
+      if (im?.data && im?.mimeType) parts.push({ inline_data: { mime_type: im.mimeType, data: im.data } });
+    }
+    const contents = [{ parts }];
+    const SYS = sysPlace(cats, tags, cities);
+    const SCHEMA = placesSchema(cats, tags);
 
     const buildPayload = (withTools: boolean) => {
       const p: any = {
-        system_instruction: { parts: [{ text: SYS_PLACE }] },
+        system_instruction: { parts: [{ text: SYS }] },
         contents,
         // responseSchema cannot combine with tools, so the URL path relies on the
-        // prompt + server-side enum validation below instead of a hard schema.
+        // prompt + server-side validation below instead of a hard schema.
         generationConfig: withTools
-          ? { responseMimeType: "application/json", maxOutputTokens: 1200, thinkingConfig: { thinkingBudget: 0 } }
-          : { responseMimeType: "application/json", responseSchema: PLACE_SCHEMA, maxOutputTokens: 1200, thinkingConfig: { thinkingBudget: 0 } },
+          ? { responseMimeType: "application/json", maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } }
+          : { responseMimeType: "application/json", responseSchema: SCHEMA, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
       };
       if (withTools) p.tools = [{ url_context: {} }];
       return p;
     };
 
-    // Links: let the model read the page (url_context). Fall back to the plain
-    // schema call if the tool path yields nothing, so behaviour never regresses.
+    // Links: read the page via url_context (no schema). Text/images: schema'd call.
     let txt = "";
     if (isUrl) { try { txt = extractText(await callGemini(K, buildPayload(true))); } catch (_) { txt = ""; } }
     if (!txt) { const g = await callGemini(K, buildPayload(false)); txt = extractText(g); if (!txt) return json({ error: "no result", detail: g?.error?.message || null }, 502); }
 
-    let place: Record<string, unknown>;
-    try { place = parseLooseJson(txt); } catch { return json({ error: "unparseable model output" }, 502); }
+    let parsed: any;
+    try { parsed = parseLooseJson(txt); } catch { return json({ error: "unparseable model output" }, 502); }
+    const rawItems = Array.isArray(parsed?.items) ? parsed.items : (parsed && parsed.name ? [parsed] : []);
+    const items = rawItems.slice(0, 15).map((it: any) => ({
+      name: (it?.name || "").toString().slice(0, 120),
+      city: cities.length ? (cities.includes(it?.city) ? it.city : "") : (it?.city || "").toString().slice(0, 120),
+      cat: cats.includes(it?.cat) ? it.cat : "",
+      tag: tags.includes(it?.tag) ? it.tag : "",
+      area: (it?.area || "").toString().slice(0, 120),
+      note: (it?.note || "").toString().slice(0, 600),
+      confidence: typeof it?.confidence === "number" ? Math.max(0, Math.min(1, it.confidence)) : 0.6,
+    })).filter((it: any) => it.name);
 
-    if (!CATS.includes(place.cat as string)) delete place.cat;
-    if (!TAGS.includes(place.tag as string)) delete place.tag;
-    if (place.city && !CITIES.includes(place.city as string)) place.city = "";
-
-    return json({ place });
+    return json({ items, place: items[0] || {} });
   } catch (e) {
     console.error("assistant error", String(e));
     return json({ error: String(e) }, 500);
