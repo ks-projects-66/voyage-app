@@ -117,3 +117,26 @@ These are the same manual passes LGT still owes itself; flag, don't fake.
 - Edge function: redeploy keeps version history; record pre-change sha `8da0ddd727ab32f7dde73d4f002c313f34bca79872dfc6699e95750aabab075b` (v10) for rollback.
 - Publication: `alter publication supabase_realtime drop table <t>;` reverses Stage 2.
 - Client: all on `feat/parity`; revert by not merging.
+
+---
+
+## 7. Post-parity backlog (added 2026-07-01, from GTM research assessment)
+
+Kept only the items that were genuine gaps vs. what Voyage already does; the rest of the
+research described features Voyage already ships and was discarded.
+
+- **Invite link (tokenised join).** Today collaboration is email-invite only (`wl_trip_members`).
+  Add a shareable join link — tap to join a trip — mirroring the existing recap-share token
+  pattern. Lower friction, more viral, pairs with realtime sync. Moderate build (+RLS for
+  link-based membership; security-sensitive).
+- **In-app map view.** Today Voyage punts to external Google Maps (walking-order links).
+  Add an in-app map of pinned places + the day's route (list ↔ map). Lift the **Leaflet**
+  approach from Le Grand Tour's recap map. Medium build.
+- **Stage 4 positioning.** Lead the marketing hook with *social + shareable* ("plan it
+  together", publishable recap) rather than "another planner" — folds into the Stage 4
+  marketing update once live sync ships. (Also matches the copywriter's under-sold finding.)
+
+**Deliberately NOT adopted:** interests → auto-generated itinerary. Conflicts with Voyage's
+manual-first, personal ethos (we removed that over-claim from the marketing on purpose).
+Revisit only to compete in the AI-copilot category. Also skipped: founding-member/referral
+growth tactics (later).
