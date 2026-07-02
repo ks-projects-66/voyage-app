@@ -8,6 +8,7 @@ import { TripApp } from "./components/TripApp.jsx";
 import { PublicRecap } from "./components/ShareRecap.jsx";
 import { initNative } from "./lib/native.js";
 import { InstallHint } from "./components/InstallHint.jsx";
+import { clearQueue } from "./lib/sync.js";
 
 function App() {
 const publicToken = useMemo(() => new URLSearchParams(window.location.search).get("recap"), []);
@@ -32,7 +33,7 @@ let checked = false;
 const markChecked = () => { if (!checked) { checked = true; setAuthChecked(true); } };
 supabase.auth.getSession().then(({ data }) => { setSession(data.session); markChecked(); }).catch(markChecked);
 const t = setTimeout(markChecked, 3500);
-const { data: sub } = supabase.auth.onAuthStateChange((event, s) => { setSession(s); markChecked(); if (event === "PASSWORD_RECOVERY") setRecovery(true); });
+const { data: sub } = supabase.auth.onAuthStateChange((event, s) => { setSession(s); markChecked(); if (event === "PASSWORD_RECOVERY") setRecovery(true); if (event === "SIGNED_OUT") clearQueue(); });
 return () => { clearTimeout(t); sub.subscription.unsubscribe(); };
 }, []);
 
@@ -49,7 +50,8 @@ const counts = {};
 (allLegs || []).forEach(l => { counts[l.trip_id] = (counts[l.trip_id] || 0) + 1; });
 setLegCounts(counts);
 setTrips(t);
-} catch (e) { setTrips([]); }
+return t;
+} catch (e) { setTrips([]); return []; }
 };
 
 useEffect(() => {
@@ -65,9 +67,8 @@ setView("trip");
 } catch (e) { flash("Could not open trip"); }
 };
 const onTripCreated = async (tripId) => {
-await loadTrips();
 try {
-const [legs, tlist] = await Promise.all([db.loadLegs(tripId), db.loadTrips()]);
+const [tlist, legs] = await Promise.all([loadTrips(), db.loadLegs(tripId)]);
 const trip = (tlist || []).find(t => t.id === tripId);
 if (trip) { setActive({ trip, legs }); setView("trip"); }
 else setView("trips");

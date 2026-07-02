@@ -88,6 +88,7 @@ Reconnaissance of Voyage's Supabase project (`bsbuhkzdebqobkpxtivb`) and `app/sr
 - **Idempotency:** queue replay must be safe to run twice. `upsert`-based writes + swallowing `23505` cover inserts; **deletes** of an already-deleted row are no-ops (fine). `addJournal`/`addPlace` use client-generated ids → re-insert hits `23505` → swallowed. ✓
 - **Optimistic id stability:** apply() must use the **same id** the dbCall persists (client-generate ids up front), else realtime refresh creates duplicates. ✓ (LGT pattern)
 - **Photos are online-only in LGT** (never queued) — replicate: don't enqueue blob uploads; queue only the row writes. ✓
+- **Deliberately online-only (not queued):** ShareRecap invite / remove-member / publish, quick-capture flow, and photo deletion (`deletePhoto`). Rationale: membership changes and photo blobs require the server round-trip and cannot be meaningfully replayed offline.
 - **Realtime + optimistic interplay:** my own write echoes back via realtime → `refresh()` returns the same row I already applied → no visual change (guard prevents overlap). ✓
 - **Edge-function taxonomy:** Voyage's `CATS` match LGT's; **`TAGS` may differ** — must pull Voyage's own `constants.js` tags and pass them, or tag output will be wrong. ⚠ Confirm in build.
 - **Story mode** still references a couple/Sydney — generalize or it mis-narrates multi-traveller trips. ⚠

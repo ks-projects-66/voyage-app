@@ -15,7 +15,7 @@ function readQueue() {
   try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]"); } catch (e) { return []; }
 }
 function writeQueue(q) {
-  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch (e) {}
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
 }
 export function queueLength() { return readQueue().length; }
 export function enqueue(op) {
@@ -23,6 +23,7 @@ export function enqueue(op) {
   q.push({ qid: qid(), ts: Date.now(), ...op });
   writeQueue(q);
 }
+export function clearQueue() { try { localStorage.removeItem(QUEUE_KEY); } catch (e) {} }
 
 // A thrown Supabase error carries a Postgres .code; 23505 = unique violation =
 // the insert already landed (a duplicate replay), so the op is effectively done.
@@ -50,17 +51,41 @@ function replay(op) {
   }
 }
 
-// Drain the queue oldest-first. Stops on the first hard (non-idempotent) failure
-// so the op is retried on the next reconnect/save rather than dropped.
-export async function flushQueue(onChange) {
+// Drain the queue oldest-first. Stops on a networkish failure so the op is
+// retried on the next reconnect/save; a hard logical failure is retried up to
+// 3 attempts total, then dropped so it can't block the queue forever.
+let flushing = false;
+export async function flushQueue(onChange, onDrop) {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
-  let q = readQueue();
-  while (q.length) {
-    const op = q[0];
-    try { await replay(op); }
-    catch (e) { if (!isAlreadyApplied(e)) return; }
-    q = readQueue(); q.shift(); writeQueue(q);
-    if (onChange) onChange(queueLength());
+  if (flushing) return;
+  flushing = true;
+  try {
+    let q = readQueue();
+    while (q.length) {
+      const op = q[0];
+      let dropped = false;
+      try { await replay(op); }
+      catch (e) {
+        if (!isAlreadyApplied(e)) {
+          if (isNetworkish(e)) return;
+          q = readQueue();
+          q[0].attempts = (q[0].attempts || 0) + 1;
+          writeQueue(q);
+          if (q[0].attempts >= 3) {
+            console.warn("dropping poison-pill op after 3 attempts:", q[0].kind);
+            q.shift(); writeQueue(q);
+            if (onDrop) onDrop();
+            dropped = true;
+          } else {
+            return;
+          }
+        }
+      }
+      if (!dropped) { q = readQueue(); q.shift(); writeQueue(q); }
+      if (onChange) onChange(queueLength());
+    }
+    if (onChange) onChange(0);
+  } finally {
+    flushing = false;
   }
-  if (onChange) onChange(0);
 }

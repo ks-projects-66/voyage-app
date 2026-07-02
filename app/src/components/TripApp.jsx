@@ -6,10 +6,11 @@ Globe, Check, Trash2, Map as MapIcon, ChevronDown, Clock, Bed, Plus, Copy,
 import { PRIVATE_TYPE_ORDER, privateTypeMeta } from "../lib/constants.js";
 import {
 buildItinerary, todayIndexFor, tripCitiesOf, uid, db, useSetStatus, useLiveWeather,
-mergedPlaces, mapDayUrl, fmtDate, tzChip, tzFull,
+mergedPlaces, mapDayUrl, fmtDate, tzChip, tzFull, sumRatings,
 } from "../lib/helpers.js";
 import { queueLength, enqueue, flushQueue, isNetworkish } from "../lib/sync.js";
 import { supabase } from "../lib/supabase.js";
+import { aiExtractDoc } from "../lib/ai.js";
 import { WeatherGlyph, HomeClock, Card, QuickAdd, Stat } from "./ui.jsx";
 import { Journal } from "./Journal.jsx";
 import { Explore } from "./Explore.jsx";
@@ -47,15 +48,16 @@ try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
 const setLocal = (updater) => setState(s => { const next = typeof updater === "function" ? updater(s) : { ...s, ...updater }; persistPrefs(next); return next; });
 
 useEffect(() => {
-const onUp = () => { setOnline(true); flushQueue(setPending); };
+const onUp = () => { setOnline(true); flushQueue(setPending, onDrop); };
 const onDown = () => setOnline(false);
 window.addEventListener("online", onUp); window.addEventListener("offline", onDown);
 return () => { window.removeEventListener("online", onUp); window.removeEventListener("offline", onDown); };
 }, []);
 // Drain anything left queued from a previous (offline) session on load.
-useEffect(() => { if (queueLength()) flushQueue(setPending); }, []);
+useEffect(() => { if (queueLength()) flushQueue(setPending, onDrop); }, []);
 
 const localToast = (m) => { setToast(m); setTimeout(() => setToast(""), 1800); };
+const onDrop = () => localToast("A change couldn't sync and was discarded");
 // runSave(label, op[, queueOp]). When a serialisable queueOp { kind, tripId?, args }
 // is supplied, the write becomes offline-first: offline or a network failure enqueues
 // it (keeping the optimistic UI) instead of throwing; a logical error still throws so
@@ -65,10 +67,17 @@ if (!online) {
 if (queueOp) { enqueue(queueOp); setPending(queueLength()); setSync({ state: "queued", message: "Saved offline, will sync" }); return { queued: true }; }
 setSync({ state: "queued", message: "Offline, retry when connected" }); throw new Error("offline");
 }
+// If older writes are still queued (reconnected but not yet drained), queue this
+// one behind them too so FIFO order is preserved instead of racing past them.
+if (queueOp && queueLength() > 0) {
+enqueue(queueOp); setPending(queueLength()); setSync({ state: "queued", message: "Saved, syncing…" });
+flushQueue(setPending, onDrop);
+return { queued: true };
+}
 setSync({ state: "saving", message: label || "Saving..." });
 try {
 const result = await op();
-flushQueue(setPending);
+flushQueue(setPending, onDrop);
 setSync({ state: "synced", message: "Saved" });
 setTimeout(() => setSync(s => s.state === "synced" ? { state: "idle", message: "Synced" } : s), 1600);
 return result;
@@ -120,8 +129,7 @@ const ctx = { state, setState, setLocal, tIndex, days, legs, trip, tripCities, t
 const stats = useMemo(() => {
 const wines = state.journal.filter(j => j.type === "Wine").length;
 const meals = state.journal.filter(j => j.type === "Meal").length;
-const sum = (r) => Object.values(r || {}).reduce((a, b) => a + (b || 0), 0);
-const bestMeal = [...state.journal].filter(j => j.type === "Meal").sort((a, b) => sum(b.ratings) - sum(a.ratings))[0];
+const bestMeal = [...state.journal].filter(j => j.type === "Meal").sort((a, b) => sumRatings(b.ratings) - sumRatings(a.ratings))[0];
 return { wines, meals, bestMeal };
 }, [state.journal]);
 
@@ -188,6 +196,7 @@ return (
 function PrivateNotes({ ctx, dayIndex, compact }) {
 const { state, copy, db, setState, flash, trip, runSave } = ctx;
 const [adding, setAdding] = useState(false);
+const [scanning, setScanning] = useState(false);
 const notes = (state.privateNotes || []).filter(n => n.day === dayIndex);
 const groups = PRIVATE_TYPE_ORDER.map(t => ({ type: t, items: notes.filter(n => n.type === t) })).filter(g => g.items.length);
 
@@ -204,12 +213,43 @@ setAdding(false);
 try { await runSave("Saving note...", () => db.addPrivateNote(trip.id, entry), { kind: "addPrivateNote", tripId: trip.id, args: { note: entry } }); flash("Note added"); }
 catch (e) { flash("Could not save note"); }
 };
+const addNoteSilent = async (note) => {
+const entry = { id: uid(), day: dayIndex, type: note.type, title: note.title, body: note.body, ref: note.ref, url: "", sort_order: 0 };
+setState(s => ({ ...s, privateNotes: [...(s.privateNotes || []), entry] }));
+try { await runSave("Saving note...", () => db.addPrivateNote(trip.id, entry), { kind: "addPrivateNote", tripId: trip.id, args: { note: entry } }); }
+catch (e) { flash("Could not save note"); }
+};
+const onScan = async (file) => {
+if (!file) return;
+if (typeof navigator !== "undefined" && navigator.onLine === false) { flash("You're offline — scanning needs a connection"); return; }
+setScanning(true);
+try {
+const items = await aiExtractDoc(file);
+if (!items.length) flash("Nothing travel-related found in that");
+else {
+for (const item of items) await addNoteSilent(item);
+flash(`Added ${items.length} item${items.length === 1 ? "" : "s"} from your document`);
+}
+} catch (e) { flash(e.message || "Could not read that document"); }
+finally { setScanning(false); }
+};
+
+const scanControl = (
+<label className="privadd" style={scanning ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
+<Sparkles size={14} /> {scanning ? "Reading…" : "Scan a ticket / PDF"}
+<input type="file" accept="image/*,application/pdf" style={{ display: "none" }} disabled={scanning}
+onChange={e => { const inputEl = e.target; onScan(inputEl.files && inputEl.files[0]).finally(() => { inputEl.value = ""; }); }} />
+</label>
+);
 
 if (!notes.length && !adding) {
 return (
 <div className="privsec">
 <div className="privhead"><Bed size={13} /> Logistics</div>
+<div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
 <button className="privadd" onClick={() => setAdding(true)}><Plus size={14} /> Add a booking or note</button>
+{scanControl}
+</div>
 </div>
 );
 }
@@ -235,7 +275,10 @@ return (
 );
 })}
 {adding ? <AddPrivateNote onCancel={() => setAdding(false)} onAdd={addNote} />
-: <button className="privadd" onClick={() => setAdding(true)}><Plus size={14} /> Add a booking or note</button>}
+: <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+<button className="privadd" onClick={() => setAdding(true)}><Plus size={14} /> Add a booking or note</button>
+{scanControl}
+</div>}
 </div>
 );
 }

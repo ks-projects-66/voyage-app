@@ -52,7 +52,7 @@ export function InstallHint() {
         <>
           <div className="installhint-t">Add Voyage to your Home Screen</div>
           <div className="installhint-s">
-            Tap <Share size={13} style={{ verticalAlign: "-2px" }} /> Share, then <strong>Add to Home Screen</strong> — it opens just like an app.
+            Tap <Share size={13} style={{ verticalAlign: "-2px" }} /> Share, then Add to Home Screen — it opens just like an app.
           </div>
         </>
       )}

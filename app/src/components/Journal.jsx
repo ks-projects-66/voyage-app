@@ -27,14 +27,17 @@ if (!title.trim()) return;
 setBusy(true);
 const entry = { id: uid(), type, title: title.trim(), note: note.trim(), ratings: { ...ratings }, region: region.trim(), vintage: vintage.trim(), city: d.city, day: tIndex, ts: Date.now(), place_id: null, photos: [] };
 try {
-await runSave("Saving journal entry...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
+const res = await runSave("Saving journal entry...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
+const queued = !!(res && res.queued);
 const uploaded = [];
-for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } }
+// Photos need the journal row persisted (FK) + a live connection. When the write is only
+// queued (offline, or draining a backlog) skip the upload rather than FK-fail and lose them.
+if (!queued) { for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } } }
 files.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });
 entry.photos = uploaded;
 setState(s => ({ ...s, journal: [entry, ...s.journal] }));
 setTitle(""); setNote(""); setRatings(Object.fromEntries(travellers.map(t => [t, 0]))); setRegion(""); setVintage(""); setFiles([]);
-flash("Saved");
+flash(queued ? (files.length ? "Saved — reconnect to add photos" : "Saved, will sync") : "Saved");
 } catch (e) { flash("Could not save entry"); }
 setBusy(false);
 };

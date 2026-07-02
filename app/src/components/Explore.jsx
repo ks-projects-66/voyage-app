@@ -186,14 +186,17 @@ setBusy(true);
 const day = place.plannedDay != null ? place.plannedDay : tIndex;
 const entry = { id: uid(), type: typeForPlace(place), title: place.name, note: note.trim(), ratings: { ...ratings }, region: "", vintage: "", city: place.city, day, ts: Date.now(), place_id: place.id, photos: [] };
 try {
-await runSave("Saving memory...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
+const res = await runSave("Saving memory...", () => db.addJournal(trip.id, entry), { kind: "addJournal", tripId: trip.id, args: { entry } });
+const queued = !!(res && res.queued);
 const uploaded = [];
-for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } }
+// Photos need the journal row persisted (FK) + a live connection. When the write is only
+// queued (offline, or draining a backlog) skip the upload rather than FK-fail and lose them.
+if (!queued) { for (const f of files) { try { uploaded.push(await db.uploadPhoto(trip.id, entry.id, f, session.user.id)); } catch (e) { flash("A photo failed to upload"); } } }
 files.forEach(f => { try { URL.revokeObjectURL(f.__preview); } catch (e) {} });
 entry.photos = uploaded;
 setState(s => ({ ...s, journal: [entry, ...s.journal] }));
 setStatus(place.id, { rated: true });
-flash("Saved to journal");
+flash(queued ? (files.length ? "Saved — reconnect to add photos" : "Saved, will sync") : "Saved to journal");
 } catch (e) { flash("Could not save"); }
 setBusy(false);
 };

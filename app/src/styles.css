@@ -17,7 +17,7 @@
 .app{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;max-width:520px;margin:0 auto;position:relative;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 .scroll-wrap{display:flex;flex-direction:column;min-height:100vh;}
 .mono,.stat-v,.daychip-num,.dc-num{font-variant-numeric:tabular-nums;}
-.topbar{position:sticky;top:0;z-index:20;background:rgba(242,242,247,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);padding:calc(18px + env(safe-area-inset-top)) 20px 12px;}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(242,242,247,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);padding:calc(24px + env(safe-area-inset-top)) 20px 12px;}
 .topbar-row{display:flex;justify-content:space-between;align-items:center;gap:10px;}
 .kicker{font-size:11px;letter-spacing:.02em;color:var(--muted);font-weight:600;}
 .brandline{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:-.025em;line-height:1;margin-top:3px;color:var(--ink);}
@@ -219,6 +219,11 @@ input,select,textarea,button{font-family:inherit;}select{appearance:none;-webkit
 .daterow .inline-input{width:100%;}
 /* card grids are plain stacks on mobile; become multi-column on desktop */
 .cardgrid{}
+/* ===== mobile-only tweaks ===== */
+@media (max-width:640px){
+  .kicker{display:none;}
+  .brandline{margin-top:0;}
+}
 /* ===== desktop / laptop layout ===== */
 @media (min-width:1000px){
   body{background:linear-gradient(180deg,#EAEEF7 0%,#F4F7FC 100%);}
